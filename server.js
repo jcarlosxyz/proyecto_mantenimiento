@@ -57,6 +57,10 @@ app.get('/', (req, res) => {
 const activosRoutes = require('./routes/activos')
 app.use('/api/activos', activosRoutes)
 
+// Upload de imágenes
+const uploadRoutes = require('./routes/upload')
+app.use('/api/upload', uploadRoutes)
+
 // ============================================================
 // Manejo de errores
 // ============================================================
