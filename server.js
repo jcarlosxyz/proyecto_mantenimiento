@@ -82,7 +82,7 @@ app.use((err, req, res, next) => {
 // ============================================================
 // Iniciar servidor
 // ============================================================
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`
   ╔══════════════════════════════════════════════════╗
   ║   CMMS API - Gestión de Mantenimiento           ║
@@ -90,6 +90,17 @@ app.listen(PORT, () => {
   ╠══════════════════════════════════════════════════╣
   ║   Módulo 1: Gestión de Activos                   ║
   ║   Base URL: http://localhost:${PORT}/api/activos    ║
+  ║                                                  ║
+  ║   Presiona Ctrl+C para detener el servidor       ║
   ╚══════════════════════════════════════════════════╝
   `)
+})
+
+// Apagado limpio con Ctrl+C
+process.on('SIGINT', () => {
+  console.log('\n  ⏹  Deteniendo servidor...')
+  server.close(() => {
+    console.log('  ✔  Servidor detenido correctamente.\n')
+    process.exit(0)
+  })
 })
