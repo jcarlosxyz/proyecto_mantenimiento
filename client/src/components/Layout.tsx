@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 const navItems = [
   { to: '/activos', icon: '⚙️', label: 'Activos' },
+  { to: '/materiales', icon: '📦', label: 'Materiales' },
 ]
 
 export default function Layout() {
