@@ -15,6 +15,12 @@ const supabaseUrl = process.env.SUPABASE_URL
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
+console.log('Supabase Config:', {
+  url: supabaseUrl ? 'OK' : 'MISSING',
+  anonKey: supabaseAnonKey ? `OK (${supabaseAnonKey.length} chars)` : 'MISSING',
+  serviceKey: supabaseServiceRoleKey ? `OK (${supabaseServiceRoleKey.length} chars)` : 'MISSING'
+})
+
 // Validar que las variables de entorno estén configuradas
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(

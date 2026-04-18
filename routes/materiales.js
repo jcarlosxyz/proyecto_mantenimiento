@@ -84,10 +84,14 @@ router.post('/', async (req, res) => {
 
     const { data, error } = await supabase.from('materiales').insert(nuevoMaterial).select().single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Error creating material:', error)
+      throw error
+    }
 
     res.status(201).json({ success: true, mensaje: 'Material creado exitosamente', data })
   } catch (error) {
+    console.error('Catch creating material:', error)
     res.status(500).json({ success: false, error: 'Error al crear el material', detalle: error.message })
   }
 })
@@ -110,11 +114,13 @@ router.put('/:id', async (req, res) => {
 
     if (error) {
       if (error.code === 'PGRST116') return res.status(404).json({ success: false, error: 'Material no encontrado' })
+      console.error('Error updating material:', error)
       throw error
     }
 
     res.json({ success: true, mensaje: 'Material actualizado exitosamente', data })
   } catch (error) {
+    console.error('Catch updating material:', error)
     res.status(500).json({ success: false, error: 'Error al actualizar el material', detalle: error.message })
   }
 })
@@ -126,9 +132,13 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params
     const { error } = await supabase.from('materiales').delete().eq('id', id)
-    if (error) throw error
+    if (error) {
+      console.error('Error deleting material:', error)
+      throw error
+    }
     res.json({ success: true, mensaje: 'Material eliminado exitosamente' })
   } catch (error) {
+    console.error('Catch deleting material:', error)
     res.status(500).json({ success: false, error: 'Error al eliminar el material', detalle: error.message })
   }
 })
