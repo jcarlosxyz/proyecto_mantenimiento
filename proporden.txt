@@ -1,0 +1,75 @@
+Objetivo general:
+El sistema debe permitir crear, gestionar y cerrar Órdenes de Trabajo, cumpliendo con la siguiente estructura y reglas de negocio.  
+
+1. Tecnologías
+Frontend: React (con Vite) y Tailwind CSS.
+Backend / Datos: Supabase (auth, base de datos, almacenamiento).
+2. Autenticación y roles
+Registro e inicio de sesión con email/contraseña usando Supabase Auth.
+Roles:
+Administrador: puede crear/editar/cerrar OTs, gestionar usuarios y activos.
+Técnico: puede ver OTs asignadas, actualizar estado, registrar trabajo realizado y materiales.
+3. Módulo de Órdenes de Trabajo (OT)
+Toda intervención de mantenimiento debe generar una OT con los siguientes campos y reglas:
+
+Número de OT (obligatorio)
+Autogenerado con formato: OT-YYYY-NNNN (ej: OT-2026-0001).
+Activo vinculado (TAG) (obligatorio)
+Selección desde un catálogo de activos.
+Tipo de mantenimiento (obligatorio)
+Valores: Correctivo, Preventivo, Predictivo.
+Prioridad (obligatorio)
+Valores: P1 Emergencia, P2 Urgente, P3 Normal, P4 Mejora.
+Descripción del problema (obligatorio)
+Texto libre: lo que reportó el operador o el sistema.
+Técnico asignado (obligatorio)
+Usuario responsable de la ejecución (relación con tabla de usuarios).
+Fecha de apertura (obligatorio)
+Generada automáticamente al crear la OT (timestamp).
+Fecha límite de inicio (obligatorio)
+Calculada automáticamente según prioridad:
+P1 = ahora + 1 hora
+P2 = ahora + 4 horas
+P3 = ahora + 48 horas
+P4 = puede ser null o ahora + X horas configurable (indicar en el código).
+Estado de la OT (obligatorio)
+Valores: Abierta, En proceso, En espera, Cerrada.
+Trabajo realizado (obligatorio al cerrar OT)
+Descripción de lo que se hizo realmente.
+Causa raíz identificada (obligatorio para cerrar OTs correctivas)
+Campo obligatorio si el tipo de mantenimiento es Correctivo y el estado pasa a Cerrada.
+Tiempo real de reparación (h) (obligatorio)
+Número decimal para cálculo de MTTR.
+Materiales y refacciones usados (obligatorio)
+Lista de ítems con: material, cantidad, costo unitario, costo total calculado.
+Firma de cierre / Validación (obligatorio)
+Usuario supervisor que valida el cierre de la OT (relación con usuarios).
+4. Reglas de negocio clave
+No se puede cerrar una OT sin:
+Trabajo realizado.
+Tiempo real de reparación.
+Materiales usados (puede ser lista vacía pero el campo debe existir).
+Firma de cierre (supervisor).
+Para OTs de tipo Correctivo, la causa raíz identificada es obligatoria al cambiar el estado a Cerrada.
+El número de OT debe ser único y secuencial por año.
+5. Base de datos en Supabase
+Diseña el esquema con al menos las siguientes tablas:  
+
+users (técnicos, supervisores, administradores, rol).
+utiliza las bases de datos de activos y ordenes que ya existen en el proyecto 
+work_orders (campos anteriores).
+work_order_materials (materiales y refacciones por OT).
+materials (catálogo de materiales, costo unitario por defecto).
+Incluye:  
+
+Sentencias SQL para crear las tablas.
+Relaciones y claves foráneas necesarias.
+6. Interfaz de usuario
+Listado de OTs:
+Tabla con filtros por: estado, prioridad, tipo de mantenimiento, técnico asignado, activo.
+Formulario de creación/edición de OT:
+Cumplir con los campos y validaciones anteriores.
+Vista de detalle:
+Información completa de la OT, historial de cambios de estado y materiales usados.
+Notificaciones:
+Mensajes de éxito/error al crear, actualizar y cerrar OTs.

@@ -58,6 +58,16 @@ app.get('/', (req, res) => {
           { metodo: 'PUT',    ruta: '/api/ordenes/:id',          descripcion: 'Actualizar/Cerrar OT' },
           { metodo: 'DELETE', ruta: '/api/ordenes/:id',          descripcion: 'Eliminar OT' }
         ]
+      },
+      materiales: {
+        base: '/api/materiales',
+        endpoints: [
+          { metodo: 'GET',    ruta: '/api/materiales',           descripcion: 'Listar catálogo de materiales' },
+          { metodo: 'GET',    ruta: '/api/materiales/:id',       descripcion: 'Obtener material por ID' },
+          { metodo: 'POST',   ruta: '/api/materiales',           descripcion: 'Crear nuevo material' },
+          { metodo: 'PUT',    ruta: '/api/materiales/:id',       descripcion: 'Actualizar material/stock' },
+          { metodo: 'DELETE', ruta: '/api/materiales/:id',       descripcion: 'Eliminar material' }
+        ]
       }
     }
   })
@@ -70,6 +80,10 @@ app.use('/api/activos', activosRoutes)
 // Módulo 2 - Órdenes de Trabajo (OT)
 const ordenesRoutes = require('./routes/ordenes')
 app.use('/api/ordenes', ordenesRoutes)
+
+// Módulo 3 - Catálogo de Materiales
+const materialesRoutes = require('./routes/materiales')
+app.use('/api/materiales', materialesRoutes)
 
 // Upload de imágenes
 const uploadRoutes = require('./routes/upload')
@@ -110,6 +124,8 @@ const server = app.listen(PORT, () => {
   ║   Base URL: http://localhost:${PORT}/api/activos    ║
   ║   Módulo 2: Órdenes de Trabajo                   ║
   ║   Base URL: http://localhost:${PORT}/api/ordenes    ║
+  ║   Módulo 3: Catálogo de Materiales               ║
+  ║   Base URL: http://localhost:${PORT}/api/materiales ║
   ║                                                  ║
   ║   Presiona Ctrl+C para detener el servidor       ║
   ╚══════════════════════════════════════════════════╝
