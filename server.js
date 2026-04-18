@@ -68,6 +68,14 @@ app.get('/', (req, res) => {
           { metodo: 'PUT',    ruta: '/api/materiales/:id',       descripcion: 'Actualizar material/stock' },
           { metodo: 'DELETE', ruta: '/api/materiales/:id',       descripcion: 'Eliminar material' }
         ]
+      },
+      consumo_materiales: {
+        base: '/api/ordenes-materiales',
+        endpoints: [
+          { metodo: 'GET',    ruta: '/api/ordenes-materiales',   descripcion: 'Listar materiales usados (filtros: ?orden_id=UUID)' },
+          { metodo: 'POST',   ruta: '/api/ordenes-materiales',   descripcion: 'Registrar consumo de material en una OT (descuenta stock)' },
+          { metodo: 'DELETE', ruta: '/api/ordenes-materiales/:id', descripcion: 'Eliminar consumo (devuelve stock)' }
+        ]
       }
     }
   })
@@ -84,6 +92,10 @@ app.use('/api/ordenes', ordenesRoutes)
 // Módulo 3 - Catálogo de Materiales
 const materialesRoutes = require('./routes/materiales')
 app.use('/api/materiales', materialesRoutes)
+
+// Módulo 4 - Consumo de Materiales en OT
+const ordenesMatRoutes = require('./routes/ordenes_materiales')
+app.use('/api/ordenes-materiales', ordenesMatRoutes)
 
 // Upload de imágenes
 const uploadRoutes = require('./routes/upload')
@@ -126,6 +138,8 @@ const server = app.listen(PORT, () => {
   ║   Base URL: http://localhost:${PORT}/api/ordenes    ║
   ║   Módulo 3: Catálogo de Materiales               ║
   ║   Base URL: http://localhost:${PORT}/api/materiales ║
+  ║   Módulo 4: Consumo Materiales (Relacional)      ║
+  ║   Base URL: http://localhost:${PORT}/api/ordenes-materiales ║
   ║                                                  ║
   ║   Presiona Ctrl+C para detener el servidor       ║
   ╚══════════════════════════════════════════════════╝

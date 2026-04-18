@@ -87,11 +87,10 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params
 
-    // Recuperar info antes de borrar para devolver stock (opcional)
+    // Recuperar info antes de borrar para devolver stock
     const { data: uso, error: errUso } = await supabase.from('ordenes_materiales').select('*').eq('id', id).single()
 
     if (uso) {
-      // Devolver stock al catálogo
       const { data: material } = await supabase.from('materiales').select('stock').eq('id', uso.material_id).single()
       if (material) {
         await supabase.from('materiales').update({ stock: material.stock + uso.cantidad }).eq('id', uso.material_id)
