@@ -9,7 +9,8 @@
 const express = require('express')
 const router = express.Router()
 const multer = require('multer')
-const { supabase } = require('../supabaseClient')
+const { supabase, supabaseAdmin } = require('../supabaseClient')
+const client = supabaseAdmin || supabase
 
 // Configurar multer para almacenar en memoria
 const upload = multer({
@@ -54,8 +55,8 @@ router.post('/imagen', upload.single('imagen'), async (req, res) => {
     const timestamp = Date.now()
     const fileName = `${activoId}/${timestamp}.${ext}`
 
-    // Subir a Supabase Storage
-    const { data, error } = await supabase.storage
+    // Subir a Supabase Storage usando el cliente admin
+    const { data, error } = await client.storage
       .from(BUCKET)
       .upload(fileName, buffer, {
         contentType: mimetype,
@@ -68,7 +69,7 @@ router.post('/imagen', upload.single('imagen'), async (req, res) => {
     }
 
     // Obtener URL pública
-    const { data: urlData } = supabase.storage
+    const { data: urlData } = client.storage
       .from(BUCKET)
       .getPublicUrl(data.path)
 
@@ -108,7 +109,7 @@ router.delete('/imagen', async (req, res) => {
       })
     }
 
-    const { error } = await supabase.storage
+    const { error } = await client.storage
       .from(BUCKET)
       .remove([path])
 

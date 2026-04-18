@@ -48,6 +48,16 @@ app.get('/', (req, res) => {
           { metodo: 'PATCH',  ruta: '/api/activos/:id/estado',   descripcion: 'Cambiar estado del activo' },
           { metodo: 'DELETE', ruta: '/api/activos/:id',          descripcion: 'Eliminar activo' }
         ]
+      },
+      ordenes: {
+        base: '/api/ordenes',
+        endpoints: [
+          { metodo: 'GET',    ruta: '/api/ordenes',              descripcion: 'Listar órdenes de trabajo' },
+          { metodo: 'GET',    ruta: '/api/ordenes/:id',          descripcion: 'Obtener OT por ID o número' },
+          { metodo: 'POST',   ruta: '/api/ordenes',              descripcion: 'Crear nueva OT' },
+          { metodo: 'PUT',    ruta: '/api/ordenes/:id',          descripcion: 'Actualizar/Cerrar OT' },
+          { metodo: 'DELETE', ruta: '/api/ordenes/:id',          descripcion: 'Eliminar OT' }
+        ]
       }
     }
   })
@@ -56,6 +66,10 @@ app.get('/', (req, res) => {
 // Módulo 1 - Gestión de Activos
 const activosRoutes = require('./routes/activos')
 app.use('/api/activos', activosRoutes)
+
+// Módulo 2 - Órdenes de Trabajo (OT)
+const ordenesRoutes = require('./routes/ordenes')
+app.use('/api/ordenes', ordenesRoutes)
 
 // Upload de imágenes
 const uploadRoutes = require('./routes/upload')
@@ -94,6 +108,8 @@ const server = app.listen(PORT, () => {
   ╠══════════════════════════════════════════════════╣
   ║   Módulo 1: Gestión de Activos                   ║
   ║   Base URL: http://localhost:${PORT}/api/activos    ║
+  ║   Módulo 2: Órdenes de Trabajo                   ║
+  ║   Base URL: http://localhost:${PORT}/api/ordenes    ║
   ║                                                  ║
   ║   Presiona Ctrl+C para detener el servidor       ║
   ╚══════════════════════════════════════════════════╝
