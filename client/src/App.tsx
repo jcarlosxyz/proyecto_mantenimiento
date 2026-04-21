@@ -4,6 +4,7 @@ import ActivosList from './pages/ActivosList'
 import ActivoForm from './pages/ActivoForm'
 import ActivoDetail from './pages/ActivoDetail'
 import MaterialesList from './pages/MaterialesList'
+import OrdenesPage from './pages/OrdenesPage'
 import { ToastProvider } from './components/Toast'
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
             <Route path="/activos/:id" element={<ActivoDetail />} />
             <Route path="/activos/:id/editar" element={<ActivoForm />} />
             <Route path="/materiales" element={<MaterialesList />} />
+            <Route path="/ordenes-trabajo" element={<OrdenesPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

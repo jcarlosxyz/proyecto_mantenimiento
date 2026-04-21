@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { listarOrdenes } from '../api/ordenes';
 import { 
   Plus, 
   Search, 
@@ -9,7 +9,7 @@ import {
   CheckCircle, 
   ArrowRight,
   User,
-  Tool
+  Wrench
 } from 'lucide-react';
 import OrdenForm from '../components/OrdenForm';
 import OrdenDetail from '../components/OrdenDetail';
@@ -38,18 +38,19 @@ const OrdenesPage: React.FC = () => {
   const fetchOrdenes = async () => {
     try {
       setLoading(true);
-      let query = supabase
-        .from('ordenes_trabajo')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (filtroEstado) query = query.eq('estado', filtroEstado);
-      if (filtroPrioridad) query = query.eq('prioridad', filtroPrioridad);
-      if (busqueda) query = query.or(`numero_ot.ilike.%${busqueda}%,activo_tag.ilike.%${busqueda}%`);
-
-      const { data, error } = await query;
-      if (error) throw error;
-      setOrdenes(data || []);
+      const res = await listarOrdenes({ 
+        estado: filtroEstado || undefined, 
+        prioridad: filtroPrioridad || undefined 
+      });
+      let data = res.data || res.ordenes || res || [];
+      
+      if (busqueda) {
+        data = data.filter((ot: any) => 
+          ot.numero_ot?.toLowerCase().includes(busqueda.toLowerCase()) || 
+          ot.activo_tag?.toLowerCase().includes(busqueda.toLowerCase())
+        );
+      }
+      setOrdenes(data);
     } catch (err: any) {
       console.error('Error al cargar órdenes:', err.message);
     } finally {
@@ -170,7 +171,7 @@ const OrdenesPage: React.FC = () => {
                     <td className="detail-tag">{ot.numero_ot}</td>
                     <td>
                       <div className="flex items-center gap-2">
-                        <Tool size={14} className="text-secondary" />
+                        <Wrench size={14} className="text-secondary" />
                         <strong>{ot.activo_tag}</strong>
                       </div>
                     </td>

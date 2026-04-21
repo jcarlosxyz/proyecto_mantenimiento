@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { obtenerOrden, actualizarOrden } from '../api/ordenes';
 import { 
   ArrowLeft, 
   Clock, 
   MapPin, 
-  Tool, 
+  Wrench, 
   User, 
   FileText,
   AlertCircle,
@@ -36,20 +36,16 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
   const fetchDetail = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('ordenes_trabajo')
-        .select('*')
-        .eq('id', ordenId)
-        .single();
+      const data = await obtenerOrden(ordenId);
       
-      if (error) throw error;
-      setOrden(data);
+      const ordenData = data.orden || data;
+      setOrden(ordenData);
       setClosingData({
-        estado: data.estado,
-        trabajo_realizado: data.trabajo_realizado || '',
-        causa_raiz: data.causa_raiz || '',
-        tiempo_reparacion_horas: data.tiempo_reparacion_horas || 0,
-        firma_cierre: data.firma_cierre || ''
+        estado: ordenData.estado,
+        trabajo_realizado: ordenData.trabajo_realizado || '',
+        causa_raiz: ordenData.causa_raiz || '',
+        tiempo_reparacion_horas: ordenData.tiempo_reparacion_horas || 0,
+        firma_cierre: ordenData.firma_cierre || ''
       });
     } catch (err: any) {
       setError(err.message);
@@ -65,13 +61,7 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://localhost:3000/api/ordenes/${ordenId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(closingData)
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.errores?.join(', ') || result.error);
+      await actualizarOrden(ordenId, closingData);
       
       onUpdated();
       fetchDetail();

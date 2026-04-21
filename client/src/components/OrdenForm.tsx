@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { crearOrden } from '../api/ordenes';
+import { listarActivos } from '../api/activos';
 import { X, Save, AlertTriangle } from 'lucide-react';
 
 interface OrdenFormProps {
@@ -20,10 +21,13 @@ const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Cargar activos para el selector
     const loadActivos = async () => {
-      const { data } = await supabase.from('activos').select('tag, nombre').order('tag');
-      if (data) setActivos(data);
+      try {
+        const res = await listarActivos();
+        if (res.data) setActivos(res.data);
+      } catch (err) {
+        console.error('Error al cargar activos:', err);
+      }
     };
     loadActivos();
   }, []);
@@ -34,19 +38,7 @@ const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
     setError('');
 
     try {
-      // Llamada al backend para crear la OT (usando la lógica de autogeneración que creamos antes)
-      // Nota: Aquí lo mandamos a través de la API REST o directamente a Supabase si tenemos el trigger.
-      // Como configuramos la API REST en routes/ordenes.js, lo ideal es usar fetch a nuestro server.
-      
-      const response = await fetch('http://localhost:3000/api/ordenes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const result = await response.json();
-      if (!result.success) throw new Error(result.errores?.join(', ') || result.error);
-
+      await crearOrden(formData);
       onSuccess();
     } catch (err: any) {
       setError(err.message);

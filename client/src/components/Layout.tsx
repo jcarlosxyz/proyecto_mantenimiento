@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 const navItems = [
   { to: '/activos', icon: '⚙️', label: 'Activos' },
   { to: '/materiales', icon: '📦', label: 'Materiales' },
+  { to: '/ordenes-trabajo', icon: '📋', label: 'Órdenes de Trabajo' },
 ]
 
 export default function Layout() {
@@ -13,6 +14,8 @@ export default function Layout() {
     if (path === '/activos/nuevo') return { title: 'Nuevo Activo', subtitle: 'Registrar un nuevo activo en el sistema' }
     if (path.endsWith('/editar')) return { title: 'Editar Activo', subtitle: 'Modificar datos del activo' }
     if (path.match(/^\/activos\/[^/]+$/)) return { title: 'Detalle de Activo', subtitle: 'Información completa del activo' }
+    if (path.startsWith('/ordenes-trabajo')) return { title: 'Órdenes de Trabajo', subtitle: 'Gestión de órdenes de mantenimiento' }
+    if (path.startsWith('/materiales')) return { title: 'Materiales', subtitle: 'Gestión de inventario de materiales' }
     return { title: 'Gestión de Activos', subtitle: 'Administra los activos del sistema de mantenimiento' }
   }
 

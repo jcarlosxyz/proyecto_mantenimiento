@@ -1,0 +1,88 @@
+const API_URL = '/api/ordenes'
+
+export interface OrdenTrabajo {
+  id: string
+  numero_ot: string
+  activo_tag: string
+  tipo_mantenimiento: string
+  prioridad: string
+  estado: string
+  descripcion_problema: string
+  tecnico_asignado: string
+  fecha_limite_inicio: string
+  trabajo_realizado?: string
+  causa_raiz?: string
+  tiempo_reparacion_horas?: number
+  firma_cierre?: string
+  created_at: string
+}
+
+export interface ListOrdenParams {
+  pagina?: number
+  limite?: number
+  estado?: string
+  prioridad?: string
+  activo_tag?: string
+}
+
+export async function listarOrdenes(params: ListOrdenParams = {}) {
+  const query = new URLSearchParams()
+  if (params.pagina) query.append('pagina', params.pagina.toString())
+  if (params.limite) query.append('limite', params.limite.toString())
+  if (params.estado) query.append('estado', params.estado)
+  if (params.prioridad) query.append('prioridad', params.prioridad)
+  if (params.activo_tag) query.append('activo_tag', params.activo_tag)
+
+  const res = await fetch(`${API_URL}?${query.toString()}`)
+  if (!res.ok) {
+    const error = await res.json()
+    throw new Error(error.error || 'Error al listar OTs')
+  }
+  return res.json()
+}
+
+export async function obtenerOrden(id: string) {
+  const res = await fetch(`${API_URL}/${id}`)
+  if (!res.ok) {
+    const error = await res.json()
+    throw new Error(error.error || 'Error al obtener OT')
+  }
+  return res.json()
+}
+
+export async function crearOrden(data: Partial<OrdenTrabajo>) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  if (!res.ok) {
+    const error = await res.json()
+    throw new Error(error.error || 'Error al crear OT')
+  }
+  return res.json()
+}
+
+export async function actualizarOrden(id: string, data: Partial<OrdenTrabajo>) {
+  const res = await fetch(`${API_URL}/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  if (!res.ok) {
+    const error = await res.json()
+    throw new Error(error.error || 'Error al actualizar OT')
+  }
+  return res.json()
+}
+
+export async function eliminarOrden(id: string) {
+  const res = await fetch(`${API_URL}/${id}`, {
+    method: 'DELETE'
+  })
+  if (!res.ok) {
+    const error = await res.json()
+    throw new Error(error.error || 'Error al eliminar OT')
+  }
+  return res.json()
+}
