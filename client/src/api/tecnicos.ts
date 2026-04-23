@@ -7,7 +7,19 @@ export interface Tecnico {
   telefono?: string;
   email?: string;
   estado: string;
+  foto_url?: string;
   created_at: string;
+}
+
+export interface UploadFotoResponse {
+  success: boolean;
+  mensaje: string;
+  data: {
+    path: string;
+    url: string;
+    nombre_original: string;
+    tamaño: number;
+  };
 }
 
 export async function listarTecnicos(estado?: string, especialidad?: string) {
@@ -59,4 +71,20 @@ export async function eliminarTecnico(id: string) {
     throw new Error(error.error || 'Error al eliminar técnico');
   }
   return res.json();
+}
+
+// Subir foto de perfil de técnico (reutiliza el mismo endpoint de upload)
+export async function subirFotoTecnico(file: File, tecnicoId?: string): Promise<UploadFotoResponse> {
+  const formData = new FormData();
+  formData.append('imagen', file);
+  if (tecnicoId) formData.append('activo_id', `tecnicos/${tecnicoId}`);
+  else formData.append('activo_id', 'tecnicos/temp');
+
+  const res = await fetch('/api/upload/imagen', {
+    method: 'POST',
+    body: formData
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Error al subir la foto');
+  return data;
 }

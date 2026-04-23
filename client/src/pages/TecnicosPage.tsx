@@ -13,6 +13,14 @@ import {
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 
+// Helper: genera iniciales del nombre (máx 2 letras)
+const getInitials = (nombre: string) => {
+  const parts = nombre.trim().split(' ').filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
 const TecnicosPage: React.FC = () => {
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,20 +153,52 @@ const TecnicosPage: React.FC = () => {
         ) : (
           tecnicos.map((tecnico) => (
             <div key={tecnico.id} className="card relative group">
-              <div className="card-header pb-2 border-b-0">
-                <div className="flex justify-between items-start w-full">
-                  <h3 className="font-bold text-lg text-white">{tecnico.nombre}</h3>
-                  <span className={`badge ${getBadgeClass(tecnico.estado)}`}>
-                    {tecnico.estado}
-                  </span>
+              {/* Foto de perfil + badge de estado */}
+              <div className="card-header pb-3" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                {/* Avatar */}
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                  border: '2px solid var(--border-color)',
+                  background: 'var(--bg-input)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                  fontWeight: 700,
+                  color: 'var(--accent-blue)',
+                  letterSpacing: '0.5px'
+                }}>
+                  {tecnico.foto_url ? (
+                    <img
+                      src={tecnico.foto_url}
+                      alt={tecnico.nombre}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  ) : (
+                    getInitials(tecnico.nombre)
+                  )}
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-bold text-lg text-white" style={{ lineHeight: '1.2' }}>{tecnico.nombre}</h3>
+                    <span className={`badge ${getBadgeClass(tecnico.estado)}`} style={{ marginLeft: '8px', flexShrink: 0 }}>
+                      {tecnico.estado}
+                    </span>
+                  </div>
+                  <div className="text-secondary" style={{ fontSize: '13px', marginTop: '2px' }}>
+                    {tecnico.especialidad}
+                  </div>
                 </div>
               </div>
+
               <div className="card-body pt-0 space-y-3">
-                <div className="text-secondary font-medium">
-                  {tecnico.especialidad}
-                </div>
-                
-                <div className="space-y-2 mt-4 text-sm text-muted">
+                <div className="space-y-2 text-sm text-muted">
                   <div className="flex items-center gap-2">
                     <Phone size={14} />
                     {tecnico.telefono || 'Sin teléfono'}
@@ -170,13 +210,13 @@ const TecnicosPage: React.FC = () => {
                 </div>
 
                 <div className="pt-4 flex gap-2 border-t border-color mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
+                  <button
                     className="btn btn-secondary flex-1 flex justify-center py-1"
                     onClick={() => handleEdit(tecnico)}
                   >
                     <Edit size={16} /> Editar
                   </button>
-                  <button 
+                  <button
                     className="btn btn-ghost text-red-500 hover:bg-red-500/10 px-3"
                     onClick={() => handleDelete(tecnico.id, tecnico.nombre)}
                     title="Eliminar técnico"

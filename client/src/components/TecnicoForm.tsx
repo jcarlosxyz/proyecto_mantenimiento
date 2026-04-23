@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, AlertTriangle } from 'lucide-react';
-import { crearTecnico, actualizarTecnico, Tecnico } from '../api/tecnicos';
+import { X, Save, AlertTriangle, Camera, User } from 'lucide-react';
+import { crearTecnico, actualizarTecnico, subirFotoTecnico, Tecnico } from '../api/tecnicos';
 
 interface TecnicoFormProps {
   tecnicoId?: string;
@@ -16,10 +16,13 @@ const TecnicoForm: React.FC<TecnicoFormProps> = ({ tecnicoId, tecnico, onClose, 
     especialidad: 'General',
     telefono: '',
     email: '',
-    estado: 'Activo'
+    estado: 'Activo',
+    foto_url: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (tecnico) {
@@ -28,10 +31,22 @@ const TecnicoForm: React.FC<TecnicoFormProps> = ({ tecnicoId, tecnico, onClose, 
         especialidad: tecnico.especialidad,
         telefono: tecnico.telefono || '',
         email: tecnico.email || '',
-        estado: tecnico.estado
+        estado: tecnico.estado,
+        foto_url: tecnico.foto_url || ''
       });
     }
   }, [tecnico]);
+
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setFotoFile(file);
+      // Preview local inmediato
+      const reader = new FileReader();
+      reader.onload = (ev) => setFotoPreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,10 +54,20 @@ const TecnicoForm: React.FC<TecnicoFormProps> = ({ tecnicoId, tecnico, onClose, 
     setError('');
 
     try {
+      let currentFotoUrl = formData.foto_url || '';
+
+      // Si hay un archivo nuevo, subirlo primero
+      if (fotoFile) {
+        const uploadRes = await subirFotoTecnico(fotoFile, tecnicoId || formData.nombre?.replace(/\s+/g, '-').toLowerCase());
+        currentFotoUrl = uploadRes.data.url;
+      }
+
+      const dataToSend = { ...formData, foto_url: currentFotoUrl };
+
       if (isEditing) {
-        await actualizarTecnico(tecnicoId!, formData);
+        await actualizarTecnico(tecnicoId!, dataToSend);
       } else {
-        await crearTecnico(formData);
+        await crearTecnico(dataToSend);
       }
       onSuccess();
     } catch (err: any) {
@@ -52,9 +77,12 @@ const TecnicoForm: React.FC<TecnicoFormProps> = ({ tecnicoId, tecnico, onClose, 
     }
   };
 
+  // Foto a mostrar: preview local > foto guardada > null
+  const fotoMostrada = fotoPreview || formData.foto_url || null;
+
   return (
     <div className="modal-overlay">
-      <div className="modal" style={{ maxWidth: '500px' }}>
+      <div className="modal" style={{ maxWidth: '520px' }}>
         <div className="flex justify-between items-center mb-6">
           <h3 className="modal-title">{isEditing ? 'Editar Técnico' : 'Nuevo Técnico'}</h3>
           <button onClick={onClose} className="btn btn-ghost btn-icon">
@@ -70,25 +98,85 @@ const TecnicoForm: React.FC<TecnicoFormProps> = ({ tecnicoId, tecnico, onClose, 
             </div>
           )}
 
+          {/* ── Foto de perfil ── */}
+          <div className="form-group full-width mb-4">
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Camera size={15} /> Foto de Perfil
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '10px' }}>
+              {/* Avatar / preview */}
+              <div style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '2px solid var(--border-color)',
+                flexShrink: 0,
+                background: 'var(--bg-input)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {fotoMostrada ? (
+                  <img
+                    src={fotoMostrada}
+                    alt="Foto técnico"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <User size={36} style={{ opacity: 0.3 }} />
+                )}
+              </div>
+
+              <div style={{ flex: 1 }}>
+                <label
+                  htmlFor="foto-tecnico"
+                  className="btn btn-secondary"
+                  style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+                >
+                  <Camera size={14} />
+                  {fotoFile ? 'Cambiar foto' : fotoMostrada ? 'Reemplazar foto' : 'Subir foto'}
+                </label>
+                <input
+                  id="foto-tecnico"
+                  type="file"
+                  accept="image/jpeg, image/png, image/webp, image/gif"
+                  style={{ display: 'none' }}
+                  onChange={handleFotoChange}
+                />
+                {fotoFile && (
+                  <div style={{ marginTop: '6px', fontSize: '12px', color: 'var(--accent-blue)' }}>
+                    📎 {fotoFile.name}
+                  </div>
+                )}
+                {!fotoFile && !fotoMostrada && (
+                  <div style={{ marginTop: '6px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                    JPG, PNG, WebP o GIF · máx. 5 MB
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="form-grid">
             <div className="form-group full-width">
               <label className="form-label">Nombre Completo <span className="form-required">*</span></label>
-              <input 
-                type="text" 
-                className="form-input" 
-                placeholder="Nombre del técnico..." 
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Nombre del técnico..."
                 required
                 value={formData.nombre}
-                onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
               />
             </div>
 
             <div className="form-group full-width">
               <label className="form-label">Especialidad <span className="form-required">*</span></label>
-              <select 
+              <select
                 className="form-select"
                 value={formData.especialidad}
-                onChange={(e) => setFormData({...formData, especialidad: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, especialidad: e.target.value })}
               >
                 <option value="General">General</option>
                 <option value="Mecánico">Mecánico</option>
@@ -101,33 +189,33 @@ const TecnicoForm: React.FC<TecnicoFormProps> = ({ tecnicoId, tecnico, onClose, 
 
             <div className="form-group">
               <label className="form-label">Teléfono</label>
-              <input 
-                type="text" 
-                className="form-input" 
+              <input
+                type="text"
+                className="form-input"
                 placeholder="Número de contacto..."
                 value={formData.telefono}
-                onChange={(e) => setFormData({...formData, telefono: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
               />
             </div>
 
             <div className="form-group">
               <label className="form-label">Email</label>
-              <input 
-                type="email" 
-                className="form-input" 
+              <input
+                type="email"
+                className="form-input"
                 placeholder="Correo electrónico..."
                 value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
 
             {isEditing && (
               <div className="form-group full-width">
                 <label className="form-label">Estado</label>
-                <select 
+                <select
                   className="form-select"
                   value={formData.estado}
-                  onChange={(e) => setFormData({...formData, estado: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
                 >
                   <option value="Activo">Activo</option>
                   <option value="Inactivo">Inactivo</option>
