@@ -97,6 +97,10 @@ app.use('/api/materiales', materialesRoutes)
 const ordenesMatRoutes = require('./routes/ordenes_materiales')
 app.use('/api/ordenes-materiales', ordenesMatRoutes)
 
+// Módulo 5 - Técnicos
+const tecnicosRoutes = require('./routes/tecnicos')
+app.use('/api/tecnicos', tecnicosRoutes)
+
 // Upload de imágenes
 const uploadRoutes = require('./routes/upload')
 app.use('/api/upload', uploadRoutes)

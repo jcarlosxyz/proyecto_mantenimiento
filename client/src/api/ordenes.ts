@@ -70,8 +70,9 @@ export async function actualizarOrden(id: string, data: Partial<OrdenTrabajo>) {
     body: JSON.stringify(data)
   })
   if (!res.ok) {
-    const error = await res.json()
-    throw new Error(error.error || 'Error al actualizar OT')
+    const errorData = await res.json()
+    const mensaje = errorData.detalle ? `${errorData.error}: ${errorData.detalle}` : errorData.error;
+    throw new Error(mensaje || 'Error al actualizar OT')
   }
   return res.json()
 }

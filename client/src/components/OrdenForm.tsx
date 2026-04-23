@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { crearOrden } from '../api/ordenes';
 import { listarActivos } from '../api/activos';
+import { listarTecnicos, Tecnico } from '../api/tecnicos';
 import { X, Save, AlertTriangle } from 'lucide-react';
 
 interface OrdenFormProps {
@@ -10,6 +11,7 @@ interface OrdenFormProps {
 
 const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
   const [activos, setActivos] = useState<{tag: string, nombre: string}[]>([]);
+  const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   const [formData, setFormData] = useState({
     activo_tag: '',
     tipo_mantenimiento: 'Preventivo',
@@ -21,15 +23,19 @@ const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const loadActivos = async () => {
+    const loadData = async () => {
       try {
-        const res = await listarActivos();
-        if (res.data) setActivos(res.data);
+        const [resActivos, resTecnicos] = await Promise.all([
+          listarActivos(),
+          listarTecnicos('Activo')
+        ]);
+        if (resActivos.data) setActivos(resActivos.data);
+        if (resTecnicos.data) setTecnicos(resTecnicos.data);
       } catch (err) {
-        console.error('Error al cargar activos:', err);
+        console.error('Error al cargar datos del formulario:', err);
       }
     };
-    loadActivos();
+    loadData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,14 +116,17 @@ const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
 
             <div className="form-group full-width">
               <label className="form-label">Técnico Asignado <span className="form-required">*</span></label>
-              <input 
-                type="text" 
-                className="form-input" 
-                placeholder="Nombre del responsable..." 
+              <select 
+                className="form-select" 
                 required
                 value={formData.tecnico_asignado}
                 onChange={(e) => setFormData({...formData, tecnico_asignado: e.target.value})}
-              />
+              >
+                <option value="">Seleccione un técnico...</option>
+                {tecnicos.map(t => (
+                  <option key={t.id} value={t.nombre}>{t.nombre} - {t.especialidad}</option>
+                ))}
+              </select>
             </div>
 
             <div className="form-group full-width">

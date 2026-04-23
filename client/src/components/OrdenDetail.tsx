@@ -38,7 +38,7 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
       setLoading(true);
       const data = await obtenerOrden(ordenId);
       
-      const ordenData = data.orden || data;
+      const ordenData = data.data || data.orden || data;
       setOrden(ordenData);
       setClosingData({
         estado: ordenData.estado,

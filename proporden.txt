@@ -4,11 +4,6 @@ El sistema debe permitir crear, gestionar y cerrar Órdenes de Trabajo, cumplien
 1. Tecnologías
 Frontend: React (con Vite) y Tailwind CSS.
 Backend / Datos: Supabase (auth, base de datos, almacenamiento).
-2. Autenticación y roles
-Registro e inicio de sesión con email/contraseña usando Supabase Auth.
-Roles:
-Administrador: puede crear/editar/cerrar OTs, gestionar usuarios y activos.
-Técnico: puede ver OTs asignadas, actualizar estado, registrar trabajo realizado y materiales.
 3. Módulo de Órdenes de Trabajo (OT)
 Toda intervención de mantenimiento debe generar una OT con los siguientes campos y reglas:
 
@@ -55,15 +50,14 @@ El número de OT debe ser único y secuencial por año.
 5. Base de datos en Supabase
 Diseña el esquema con al menos las siguientes tablas:  
 
-users (técnicos, supervisores, administradores, rol).
+
 utiliza las bases de datos de activos y ordenes que ya existen en el proyecto 
 work_orders (campos anteriores).
 work_order_materials (materiales y refacciones por OT).
 materials (catálogo de materiales, costo unitario por defecto).
 Incluye:  
 
-Sentencias SQL para crear las tablas.
-Relaciones y claves foráneas necesarias.
+
 6. Interfaz de usuario
 Listado de OTs:
 Tabla con filtros por: estado, prioridad, tipo de mantenimiento, técnico asignado, activo.
@@ -73,3 +67,4 @@ Vista de detalle:
 Información completa de la OT, historial de cambios de estado y materiales usados.
 Notificaciones:
 Mensajes de éxito/error al crear, actualizar y cerrar OTs.
+este crud debe de estar en el menu principal como apartado

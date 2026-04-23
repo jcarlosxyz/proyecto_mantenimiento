@@ -160,6 +160,21 @@ router.post('/', async (req, res) => {
 
     if (error) throw error
 
+    // Actualizar estado del activo vinculado
+    let nuevoEstadoActivo = 'En mantenimiento'
+    if (tipo_mantenimiento === 'Correctivo') {
+      nuevoEstadoActivo = 'Fuera de servicio'
+    }
+    
+    const { error: errorActivo } = await supabase
+      .from('activos')
+      .update({ estado: nuevoEstadoActivo })
+      .eq('tag', activo_tag.toUpperCase())
+
+    if (errorActivo) {
+      console.warn(`OT creada, pero falló la actualización del estado del activo ${activo_tag}:`, errorActivo.message)
+    }
+
     res.status(201).json({ success: true, mensaje: 'OT creada exitosamente', data })
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error al crear la OT', detalle: error.message })

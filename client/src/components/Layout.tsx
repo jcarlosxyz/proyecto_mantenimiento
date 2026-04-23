@@ -4,6 +4,7 @@ const navItems = [
   { to: '/activos', icon: '⚙️', label: 'Activos' },
   { to: '/materiales', icon: '📦', label: 'Materiales' },
   { to: '/ordenes-trabajo', icon: '📋', label: 'Órdenes de Trabajo' },
+  { to: '/tecnicos', icon: '👷', label: 'Técnicos' },
 ]
 
 export default function Layout() {
@@ -16,6 +17,7 @@ export default function Layout() {
     if (path.match(/^\/activos\/[^/]+$/)) return { title: 'Detalle de Activo', subtitle: 'Información completa del activo' }
     if (path.startsWith('/ordenes-trabajo')) return { title: 'Órdenes de Trabajo', subtitle: 'Gestión de órdenes de mantenimiento' }
     if (path.startsWith('/materiales')) return { title: 'Materiales', subtitle: 'Gestión de inventario de materiales' }
+    if (path.startsWith('/tecnicos')) return { title: 'Técnicos', subtitle: 'Gestión del personal de mantenimiento' }
     return { title: 'Gestión de Activos', subtitle: 'Administra los activos del sistema de mantenimiento' }
   }
 
