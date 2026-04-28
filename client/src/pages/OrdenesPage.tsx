@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { listarOrdenes } from '../api/ordenes';
+import { listarTecnicos, Tecnico } from '../api/tecnicos';
 import { 
   Plus, 
   Search, 
@@ -8,7 +9,6 @@ import {
   AlertCircle, 
   CheckCircle, 
   ArrowRight,
-  User,
   Wrench
 } from 'lucide-react';
 import OrdenForm from '../components/OrdenForm';
@@ -34,6 +34,9 @@ const OrdenesPage: React.FC = () => {
   const [busqueda, setBusqueda] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Mapa nombre → técnico para mostrar foto
+  const [tecnicoMap, setTecnicoMap] = useState<Record<string, Tecnico>>({});
 
   const fetchOrdenes = async () => {
     try {
@@ -61,6 +64,20 @@ const OrdenesPage: React.FC = () => {
   useEffect(() => {
     fetchOrdenes();
   }, [filtroEstado, filtroPrioridad]);
+
+  // Cargar técnicos una sola vez para el mapa de fotos
+  useEffect(() => {
+    listarTecnicos().then(res => {
+      const data: Tecnico[] = res.data || [];
+      const map: Record<string, Tecnico> = {};
+      data.forEach(t => { map[t.nombre] = t; });
+      setTecnicoMap(map);
+    }).catch(() => {});
+  }, []);
+
+  // Genera las iniciales de un nombre
+  const getInitials = (nombre: string) =>
+    nombre.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase();
 
   const getPriorityClass = (prio: string) => {
     switch (prio) {
@@ -187,9 +204,43 @@ const OrdenesPage: React.FC = () => {
                       </span>
                     </td>
                     <td>
-                      <div className="flex items-center gap-2">
-                        <User size={14} className="text-muted" />
-                        {ot.tecnico_asignado}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {/* Avatar con foto o iniciales */}
+                        {(() => {
+                          const tec = tecnicoMap[ot.tecnico_asignado];
+                          return tec?.foto_url ? (
+                            <img
+                              src={tec.foto_url}
+                              alt={ot.tecnico_asignado}
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '50%',
+                                objectFit: 'cover',
+                                border: '2px solid var(--border-color)',
+                                flexShrink: 0
+                              }}
+                            />
+                          ) : (
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '50%',
+                              background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              color: '#fff',
+                              flexShrink: 0,
+                              letterSpacing: '0.5px'
+                            }}>
+                              {getInitials(ot.tecnico_asignado)}
+                            </div>
+                          );
+                        })()}
+                        <span style={{ fontSize: '13px' }}>{ot.tecnico_asignado}</span>
                       </div>
                     </td>
                     <td>
