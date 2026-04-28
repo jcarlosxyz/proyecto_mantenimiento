@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { obtenerOrden, actualizarOrden } from '../api/ordenes';
+import { listarTecnicos, Tecnico } from '../api/tecnicos';
+import { compartirPorWhatsApp, DatosOT } from '../lib/whatsapp';
 import { 
   ArrowLeft, 
   Clock, 
@@ -10,7 +12,8 @@ import {
   AlertCircle,
   Package,
   CheckCircle,
-  Save
+  Save,
+  MessageCircle
 } from 'lucide-react';
 
 interface OrdenDetailProps {
@@ -23,6 +26,7 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
   const [orden, setOrden] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   
   // Estado para el cierre
   const [closingData, setClosingData] = useState({
@@ -56,6 +60,10 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
 
   useEffect(() => {
     fetchDetail();
+    // Cargar técnicos para obtener el teléfono al compartir
+    listarTecnicos().then(res => {
+      if (res.data) setTecnicos(res.data);
+    }).catch(() => {});
   }, [ordenId]);
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -94,6 +102,33 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
           <div className={`badge ${orden.estado === 'Cerrada' ? 'badge-area' : 'badge-mantenimiento'} py-2 px-4 text-sm`}>
             Estado: {orden.estado}
           </div>
+          {/* Botón WhatsApp */}
+          <button
+            className="btn btn-sm flex items-center gap-2"
+            style={{ background: '#25D366', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', padding: '6px 14px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+            onClick={() => {
+              const tecnico = tecnicos.find(t => t.nombre === orden.tecnico_asignado);
+              const datosOT: DatosOT = {
+                numero_ot:            orden.numero_ot,
+                activo_tag:           orden.activo_tag,
+                tipo_mantenimiento:   orden.tipo_mantenimiento,
+                prioridad:            orden.prioridad,
+                estado:               orden.estado,
+                tecnico_asignado:     orden.tecnico_asignado,
+                descripcion_problema: orden.descripcion_problema,
+                fecha_limite_inicio:  orden.fecha_limite_inicio,
+                trabajo_realizado:    orden.trabajo_realizado,
+                causa_raiz:           orden.causa_raiz,
+                tiempo_reparacion_horas: orden.tiempo_reparacion_horas,
+                firma_cierre:         orden.firma_cierre,
+              };
+              compartirPorWhatsApp(datosOT, tecnico?.telefono);
+            }}
+            title="Compartir esta OT por WhatsApp"
+          >
+            <MessageCircle size={15} />
+            WhatsApp
+          </button>
         </div>
       </div>
 

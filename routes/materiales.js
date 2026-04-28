@@ -69,7 +69,7 @@ router.get('/:id', async (req, res) => {
 // ============================================================
 router.post('/', async (req, res) => {
   try {
-    const { nombre, unidad, costo_unitario, stock } = req.body
+    const { nombre, unidad, costo_unitario, stock, stock_minimo, stock_maximo } = req.body
 
     if (!nombre) {
       return res.status(400).json({ success: false, error: 'El nombre del material es obligatorio' })
@@ -79,7 +79,9 @@ router.post('/', async (req, res) => {
       nombre,
       unidad: unidad || 'Pieza',
       costo_unitario: costo_unitario || 0,
-      stock: stock || 0
+      stock: stock || 0,
+      stock_minimo: stock_minimo ?? 0,
+      stock_maximo: stock_maximo ?? null
     }
 
     const { data, error } = await supabase.from('materiales').insert(nuevoMaterial).select().single()
@@ -102,13 +104,15 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { nombre, unidad, costo_unitario, stock } = req.body
+    const { nombre, unidad, costo_unitario, stock, stock_minimo, stock_maximo } = req.body
 
     const actualizacion = { updated_at: new Date().toISOString() }
     if (nombre) actualizacion.nombre = nombre
     if (unidad) actualizacion.unidad = unidad
     if (costo_unitario !== undefined) actualizacion.costo_unitario = costo_unitario
     if (stock !== undefined) actualizacion.stock = stock
+    if (stock_minimo !== undefined) actualizacion.stock_minimo = stock_minimo
+    if (stock_maximo !== undefined) actualizacion.stock_maximo = stock_maximo === '' ? null : stock_maximo
 
     const { data, error } = await supabase.from('materiales').update(actualizacion).eq('id', id).select().single()
 

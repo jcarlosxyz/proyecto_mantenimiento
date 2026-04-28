@@ -76,8 +76,28 @@ export default function MaterialesList() {
         <div className="stat-card">
           <div className="stat-icon amber">⚠️</div>
           <div>
-            <div className="stat-value">{materiales.filter(m => m.stock < 5).length}</div>
-            <div className="stat-label">Stock Bajo (&lt;5)</div>
+            <div className="stat-value" style={{ color: 'var(--accent-amber)' }}>
+              {materiales.filter(m => m.stock <= m.stock_minimo).length}
+            </div>
+            <div className="stat-label">Stock Bajo Mínimo</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: 'var(--accent-red-glow)' }}>🔴</div>
+          <div>
+            <div className="stat-value" style={{ color: 'var(--accent-red)' }}>
+              {materiales.filter(m => m.stock === 0).length}
+            </div>
+            <div className="stat-label">Sin Stock</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: 'var(--accent-blue-glow)' }}>🔵</div>
+          <div>
+            <div className="stat-value" style={{ color: 'var(--accent-blue)' }}>
+              {materiales.filter(m => m.stock_maximo !== null && m.stock > m.stock_maximo).length}
+            </div>
+            <div className="stat-label">Sobre Máximo</div>
           </div>
         </div>
       </div>
@@ -124,43 +144,90 @@ export default function MaterialesList() {
                     <th>Nombre</th>
                     <th>Unidad</th>
                     <th>Costo</th>
-                    <th>Stock</th>
+                    <th>Stock Actual</th>
+                    <th>Mín / Máx</th>
                     <th style={{ textAlign: 'right' }}>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {materiales.map(m => (
-                    <tr key={m.id}>
-                      <td style={{ fontWeight: 600 }}>{m.nombre}</td>
-                      <td><span className="badge badge-area">{m.unidad}</span></td>
-                      <td style={{ color: 'var(--emerald-600)', fontWeight: 500 }}>
-                        ${m.costo_unitario.toFixed(2)}
-                      </td>
-                      <td>
-                        <span className={m.stock < 5 ? 'text-danger font-bold' : ''}>
-                          {m.stock} {m.stock < 5 ? '⚠️' : ''}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => setFormModal({ show: true, material: m })}
-                            title="Editar"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => setDeleteModal(m)}
-                            title="Eliminar"
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {materiales.map(m => {
+                    const bajominimo = m.stock <= m.stock_minimo
+                    const sinstock   = m.stock === 0
+                    const sobremáx   = m.stock_maximo !== null && m.stock > m.stock_maximo
+
+                    // Color del stock según estado
+                    const stockColor = sinstock
+                      ? 'var(--accent-red)'
+                      : bajominimo
+                      ? 'var(--accent-amber)'
+                      : sobremáx
+                      ? 'var(--accent-blue)'
+                      : 'var(--accent-emerald)'
+
+                    return (
+                      <tr key={m.id}>
+                        <td style={{ fontWeight: 600 }}>{m.nombre}</td>
+                        <td><span className="badge badge-area">{m.unidad}</span></td>
+                        <td style={{ fontWeight: 500 }}>${m.costo_unitario.toFixed(2)}</td>
+
+                        {/* Stock actual con indicador */}
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontWeight: 700, color: stockColor, fontSize: '15px' }}>
+                              {m.stock}
+                            </span>
+                            {sinstock   && <span title="Sin stock">🔴</span>}
+                            {!sinstock && bajominimo && <span title={`Por debajo del mínimo (${m.stock_minimo})`}>⚠️</span>}
+                            {sobremáx   && <span title={`Sobre el máximo (${m.stock_maximo})`}>🔵</span>}
+                          </div>
+                        </td>
+
+                        {/* Mín / Máx */}
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                            <span style={{
+                              background: 'var(--accent-amber-glow)',
+                              color: 'var(--accent-amber)',
+                              borderRadius: '4px',
+                              padding: '2px 6px',
+                              fontWeight: 600
+                            }}>
+                              ↓ {m.stock_minimo}
+                            </span>
+                            <span style={{ color: 'var(--text-muted)' }}>/</span>
+                            <span style={{
+                              background: m.stock_maximo !== null ? 'var(--accent-blue-glow)' : 'transparent',
+                              color: m.stock_maximo !== null ? 'var(--accent-blue)' : 'var(--text-muted)',
+                              borderRadius: '4px',
+                              padding: '2px 6px',
+                              fontWeight: 600
+                            }}>
+                              ↑ {m.stock_maximo !== null ? m.stock_maximo : '∞'}
+                            </span>
+                          </div>
+                        </td>
+
+                        <td style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => setFormModal({ show: true, material: m })}
+                              title="Editar"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => setDeleteModal(m)}
+                              title="Eliminar"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

@@ -7,6 +7,8 @@ export interface Material {
   unidad: string
   costo_unitario: number
   stock: number
+  stock_minimo: number
+  stock_maximo: number | null
   created_at: string
   updated_at: string
 }

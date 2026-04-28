@@ -105,6 +105,10 @@ app.use('/api/tecnicos', tecnicosRoutes)
 const uploadRoutes = require('./routes/upload')
 app.use('/api/upload', uploadRoutes)
 
+// Módulo WhatsApp - Notificaciones de OT
+const whatsappRoutes = require('./routes/whatsapp')
+app.use('/api/whatsapp', whatsappRoutes)
+
 // ============================================================
 // Manejo de errores
 // ============================================================
