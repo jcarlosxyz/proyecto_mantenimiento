@@ -35,8 +35,11 @@ const OrdenesPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // Mapa nombre → técnico para mostrar foto
-  const [tecnicoMap, setTecnicoMap] = useState<Record<string, Tecnico>>({});
+  // Mapa nombre → técnico para mostrar foto y datos
+  const [tecnicoMap, setTecnicoMap] = useState<Record<string, Tecnico>>({})
+  // Técnico sobre el que está el cursor (para el tooltip)
+  const [hoveredTecnico, setHoveredTecnico] = useState<Tecnico | null>(null)
+  const [tooltipPos, setTooltipPos]         = useState({ top: 0, left: 0 })
 
   const fetchOrdenes = async () => {
     try {
@@ -204,41 +207,40 @@ const OrdenesPage: React.FC = () => {
                       </span>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative', cursor: 'default' }}
+                        onMouseEnter={(e) => {
+                          const tec = tecnicoMap[ot.tecnico_asignado]
+                          if (!tec) return
+                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                          setTooltipPos({ top: rect.top + window.scrollY - 8, left: rect.left + window.scrollX })
+                          setHoveredTecnico(tec)
+                        }}
+                        onMouseLeave={() => setHoveredTecnico(null)}
+                      >
                         {/* Avatar con foto o iniciales */}
                         {(() => {
-                          const tec = tecnicoMap[ot.tecnico_asignado];
+                          const tec = tecnicoMap[ot.tecnico_asignado]
                           return tec?.foto_url ? (
                             <img
                               src={tec.foto_url}
                               alt={ot.tecnico_asignado}
                               style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                objectFit: 'cover',
-                                border: '2px solid var(--border-color)',
-                                flexShrink: 0
+                                width: '32px', height: '32px',
+                                borderRadius: '50%', objectFit: 'cover',
+                                border: '2px solid var(--border-color)', flexShrink: 0
                               }}
                             />
                           ) : (
                             <div style={{
-                              width: '32px',
-                              height: '32px',
-                              borderRadius: '50%',
+                              width: '32px', height: '32px', borderRadius: '50%',
                               background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              color: '#fff',
-                              flexShrink: 0,
-                              letterSpacing: '0.5px'
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '11px', fontWeight: 700, color: '#fff', flexShrink: 0
                             }}>
                               {getInitials(ot.tecnico_asignado)}
                             </div>
-                          );
+                          )
                         })()}
                         <span style={{ fontSize: '13px' }}>{ot.tecnico_asignado}</span>
                       </div>
@@ -286,6 +288,114 @@ const OrdenesPage: React.FC = () => {
           }} 
         />
       )}
+
+      {/* ── Tooltip de Técnico (tamaño doble) ── */}
+      {hoveredTecnico && (
+        <div
+          style={{
+            position: 'fixed',
+            top:  tooltipPos.top - 320,
+            left: tooltipPos.left,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            animation: 'fadeIn 150ms ease'
+          }}
+        >
+          {/* Tarjeta */}
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '28px',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
+            minWidth: '440px',
+            maxWidth: '520px'
+          }}>
+            {/* Cabecera: foto grande + nombre */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px' }}>
+              {hoveredTecnico.foto_url ? (
+                <img
+                  src={hoveredTecnico.foto_url}
+                  alt={hoveredTecnico.nombre}
+                  style={{
+                    width: '104px', height: '104px',
+                    borderRadius: '50%', objectFit: 'cover',
+                    border: '3px solid var(--accent-blue)',
+                    boxShadow: '0 0 0 6px var(--accent-blue-glow)',
+                    flexShrink: 0
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: '104px', height: '104px', borderRadius: '50%',
+                  background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '36px', fontWeight: 800, color: '#fff', flexShrink: 0,
+                  boxShadow: '0 0 0 6px var(--accent-blue-glow)'
+                }}>
+                  {getInitials(hoveredTecnico.nombre)}
+                </div>
+              )}
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '20px', color: 'var(--text-primary)', lineHeight: 1.2, marginBottom: '8px' }}>
+                  {hoveredTecnico.nombre}
+                </div>
+                <div style={{
+                  fontSize: '13px',
+                  background: 'var(--accent-blue-glow)',
+                  color: 'var(--accent-blue)',
+                  borderRadius: '100px', padding: '4px 14px',
+                  display: 'inline-block', fontWeight: 700,
+                  letterSpacing: '0.3px'
+                }}>
+                  {hoveredTecnico.especialidad}
+                </div>
+              </div>
+            </div>
+
+            {/* Separador */}
+            <div style={{ borderTop: '1px solid var(--border-color)', marginBottom: '16px' }} />
+
+            {/* Datos de contacto */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
+              {hoveredTecnico.telefono && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
+                  <span style={{ fontSize: '20px' }}>📱</span>
+                  <span style={{ fontWeight: 500 }}>{hoveredTecnico.telefono}</span>
+                </div>
+              )}
+              {hoveredTecnico.email && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
+                  <span style={{ fontSize: '20px' }}>✉️</span>
+                  <span style={{ wordBreak: 'break-all', fontWeight: 500 }}>{hoveredTecnico.email}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '20px' }}>
+                  {hoveredTecnico.estado === 'Activo' ? '🟢' : '🔴'}
+                </span>
+                <span style={{
+                  color: hoveredTecnico.estado === 'Activo' ? 'var(--accent-emerald)' : 'var(--accent-red)',
+                  fontWeight: 700, fontSize: '15px'
+                }}>
+                  {hoveredTecnico.estado}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Flecha apuntando hacia abajo */}
+          <div style={{
+            width: 0, height: 0,
+            borderLeft:  '12px solid transparent',
+            borderRight: '12px solid transparent',
+            borderTop:   '12px solid var(--bg-card)',
+            margin: '0 24px',
+            filter: 'drop-shadow(0 3px 3px rgba(0,0,0,0.3))'
+          }} />
+        </div>
+      )}
+
     </div>
   );
 };
