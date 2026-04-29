@@ -3,9 +3,10 @@
  * CRUD para la tabla 'ordenes_materiales' vinculada a materiales y OTs
  */
 
-const express = require('express')
-const router = express.Router()
+const express   = require('express')
+const router    = express.Router()
 const { supabase } = require('../supabaseClient')
+const { broadcast } = require('../lib/wsServer')
 
 // ============================================================
 // GET /api/ordenes-materiales - Listar materiales por orden
@@ -79,6 +80,16 @@ router.post('/', async (req, res) => {
     const nuevoStock = material.stock - cantidad
     await supabase.from('materiales').update({ stock: nuevoStock }).eq('id', material_id)
 
+    // 4. ⚡ Emitir evento WebSocket a todos los clientes
+    broadcast('inventario_actualizado', {
+      material_id,
+      nombre:        data.materiales?.nombre ?? '',
+      stock_nuevo:   nuevoStock,
+      cantidad_usada: cantidad,
+      orden_id,
+      accion:        'consumo'
+    })
+
     res.status(201).json({ success: true, mensaje: 'Material registrado en la OT', data })
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error al registrar material', detalle: error.message })
@@ -93,19 +104,38 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params
 
     // Recuperar info antes de borrar para devolver stock
-    const { data: uso, error: errUso } = await supabase.from('ordenes_materiales').select('*').eq('id', id).single()
+    const { data: uso, error: errUso } = await supabase
+      .from('ordenes_materiales')
+      .select('*, materiales(nombre)')
+      .eq('id', id)
+      .single()
 
+    let stockDevuelto = null
     if (uso) {
-      const { data: material } = await supabase.from('materiales').select('stock').eq('id', uso.material_id).single()
+      const { data: material } = await supabase
+        .from('materiales').select('stock').eq('id', uso.material_id).single()
       if (material) {
-        await supabase.from('materiales').update({ stock: material.stock + uso.cantidad }).eq('id', uso.material_id)
+        stockDevuelto = material.stock + uso.cantidad
+        await supabase.from('materiales')
+          .update({ stock: stockDevuelto })
+          .eq('id', uso.material_id)
+
+        // ⚡ Emitir evento WebSocket - stock devuelto
+        broadcast('inventario_actualizado', {
+          material_id:  uso.material_id,
+          nombre:       uso.materiales?.nombre ?? '',
+          stock_nuevo:  stockDevuelto,
+          cantidad_usada: uso.cantidad,
+          orden_id:     uso.orden_id,
+          accion:       'devolucion'
+        })
       }
     }
 
     const { error } = await supabase.from('ordenes_materiales').delete().eq('id', id)
     if (error) throw error
 
-    res.json({ success: true, mensaje: 'Registro de material eliminado y stock devuelto' })
+    res.json({ success: true, mensaje: 'Registro eliminado y stock devuelto' })
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error al eliminar registro de material', detalle: error.message })
   }

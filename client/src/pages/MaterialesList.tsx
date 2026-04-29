@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { listarMateriales, eliminarMaterial, type Material, type PaginationInfo, type ListParams } from '../api/materiales'
 import { useToast } from '../components/Toast'
-import MaterialForm from './materiales/MaterialForm' // Crearemos este después
+import MaterialForm from './materiales/MaterialForm'
+import { useInventarioWS, type EventoInventario } from '../hooks/useInventarioWS'
 
 export default function MaterialesList() {
   const { showSuccess, showError } = useToast()
@@ -16,6 +17,25 @@ export default function MaterialesList() {
   // Filtros
   const [buscar, setBuscar] = useState('')
   const [pagina, setPagina] = useState(1)
+
+  // ⚡ Notificación WS: actualiza el stock en el estado local sin refetch
+  const [wsNotif, setWsNotif] = useState<{ nombre: string; stock: number; accion: string } | null>(null)
+
+  useInventarioWS(useCallback((evento: EventoInventario) => {
+    const { material_id, nombre, stock_nuevo, accion } = evento.datos
+
+    // Actualizar solo el material afectado en el array local
+    setMateriales(prev =>
+      prev.map(m =>
+        m.id === material_id ? { ...m, stock: stock_nuevo } : m
+      )
+    )
+
+    // Mostrar notificación flotante
+    const accionLabel = accion === 'consumo' ? '↓ Consumo registrado' : '↑ Stock devuelto'
+    setWsNotif({ nombre, stock: stock_nuevo, accion: accionLabel })
+    setTimeout(() => setWsNotif(null), 4000)
+  }, []))
 
   const fetchMateriales = useCallback(async () => {
     setLoading(true)
@@ -64,6 +84,39 @@ export default function MaterialesList() {
 
   return (
     <>
+      {/* ⚡ Notificación WebSocket flotante */}
+      {wsNotif && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 500,
+          background: 'var(--bg-card)',
+          border: '1px solid var(--accent-blue)',
+          borderRadius: 'var(--radius-md)',
+          padding: '12px 18px',
+          boxShadow: '0 0 0 3px var(--accent-blue-glow), var(--shadow-lg)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          fontSize: '13px',
+          animation: 'slideInRight 300ms ease',
+          maxWidth: '340px'
+        }}>
+          <span style={{ fontSize: '18px' }}>⚡</span>
+          <div>
+            <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>
+              {wsNotif.accion}
+            </div>
+            <div style={{ color: 'var(--text-muted)' }}>
+              <strong style={{ color: 'var(--text-secondary)' }}>{wsNotif.nombre}</strong>
+              {' '}&mdash; Stock actual:{' '}
+              <strong style={{ color: 'var(--accent-emerald)' }}>{wsNotif.stock}</strong>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats rápidas */}
       <div className="stats-row">
         <div className="stat-card">

@@ -7,11 +7,14 @@
  * URL base: http://localhost:3000
  */
 
-const express = require('express')
-const cors = require('cors')
+const express  = require('express')
+const cors     = require('cors')
+const http     = require('http')
 require('dotenv').config()
 
-const app = express()
+const { initWSS } = require('./lib/wsServer')
+
+const app  = express()
 const PORT = process.env.PORT || 3000
 
 // ============================================================
@@ -132,25 +135,24 @@ app.use((err, req, res, next) => {
 })
 
 // ============================================================
-// Iniciar servidor
+// Iniciar servidor (HTTP + WebSocket comparten el mismo puerto)
 // ============================================================
-const server = app.listen(PORT, () => {
+const server = http.createServer(app)
+
+// Inicializar WebSocket Server
+initWSS(server)
+
+server.listen(PORT, () => {
   console.log(`
-  ╔══════════════════════════════════════════════════╗
+  ╔════════════════════════════════════════════════╗
   ║   CMMS API - Gestión de Mantenimiento           ║
-  ║   Servidor corriendo en: http://localhost:${PORT}   ║
-  ╠══════════════════════════════════════════════════╣
-  ║   Módulo 1: Gestión de Activos                   ║
-  ║   Base URL: http://localhost:${PORT}/api/activos    ║
-  ║   Módulo 2: Órdenes de Trabajo                   ║
-  ║   Base URL: http://localhost:${PORT}/api/ordenes    ║
-  ║   Módulo 3: Catálogo de Materiales               ║
-  ║   Base URL: http://localhost:${PORT}/api/materiales ║
-  ║   Módulo 4: Consumo Materiales (Relacional)      ║
-  ║   Base URL: http://localhost:${PORT}/api/ordenes-materiales ║
-  ║                                                  ║
-  ║   Presiona Ctrl+C para detener el servidor       ║
-  ╚══════════════════════════════════════════════════╝
+  ║   Servidor: http://localhost:${PORT}               ║
+  ║   WebSocket: ws://localhost:${PORT}/ws             ║
+  ╠════════════════════════════════════════════════╣
+  ║   API:       /api/activos /api/ordenes             ║
+  ║              /api/materiales /api/tecnicos         ║
+  ║   Presiona Ctrl+C para detener                     ║
+  ╚════════════════════════════════════════════════╝
   `)
 })
 
