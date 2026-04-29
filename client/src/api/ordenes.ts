@@ -63,7 +63,7 @@ export async function crearOrden(data: Partial<OrdenTrabajo>) {
   return res.json()
 }
 
-export async function actualizarOrden(id: string, data: Partial<OrdenTrabajo>) {
+export async function actualizarOrden(id: string, data: Record<string, any>) {
   const res = await fetch(`${API_URL}/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -71,8 +71,14 @@ export async function actualizarOrden(id: string, data: Partial<OrdenTrabajo>) {
   })
   if (!res.ok) {
     const errorData = await res.json()
-    const mensaje = errorData.detalle ? `${errorData.error}: ${errorData.detalle}` : errorData.error;
-    throw new Error(mensaje || 'Error al actualizar OT')
+    // El backend puede retornar { errores: [...] } en validaciones
+    if (errorData.errores && Array.isArray(errorData.errores)) {
+      throw new Error(errorData.errores.join(' | '))
+    }
+    const mensaje = errorData.detalle
+      ? `${errorData.error}: ${errorData.detalle}`
+      : (errorData.error || 'Error al actualizar OT')
+    throw new Error(mensaje)
   }
   return res.json()
 }

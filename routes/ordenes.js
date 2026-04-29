@@ -193,40 +193,58 @@ router.put('/:id', async (req, res) => {
       causa_raiz,
       tiempo_reparacion_horas,
       materiales_usados,
-      firma_cierre
+      firma_cierre,
+      fecha_cierre
     } = req.body
 
-    // Si pasamos a "Cerrada", validamos lo obligatorio
+    // Validación de campos obligatorios al cerrar
     const errores = []
-    
-    // Si estado actual a actualizar es 'Cerrada' o incluye validaciones de cierre:
     if (estado === 'Cerrada') {
       if (!trabajo_realizado) errores.push('Debes describir el Trabajo realizado para cerrar la OT')
-      if (!firma_cierre) errores.push('La Firma de cierre es obligatoria')
+      if (!firma_cierre)      errores.push('La Firma de cierre es obligatoria')
     }
-
     if (errores.length > 0) return res.status(400).json({ success: false, errores })
 
+    // Construir objeto de actualización
     const actualizacion = { updated_at: new Date().toISOString() }
-    if (estado) actualizacion.estado = estado
-    if (trabajo_realizado !== undefined) actualizacion.trabajo_realizado = trabajo_realizado
-    if (causa_raiz !== undefined) actualizacion.causa_raiz = causa_raiz
+    if (estado)                          actualizacion.estado                  = estado
+    if (trabajo_realizado !== undefined) actualizacion.trabajo_realizado       = trabajo_realizado
+    if (causa_raiz        !== undefined) actualizacion.causa_raiz              = causa_raiz
     if (tiempo_reparacion_horas !== undefined) actualizacion.tiempo_reparacion_horas = tiempo_reparacion_horas
-    if (materiales_usados !== undefined) actualizacion.materiales_usados = materiales_usados
-    if (firma_cierre !== undefined) actualizacion.firma_cierre = firma_cierre
+    if (materiales_usados !== undefined) actualizacion.materiales_usados       = materiales_usados
+    if (firma_cierre      !== undefined) actualizacion.firma_cierre            = firma_cierre
 
-    const { data, error } = await supabase.from('ordenes_trabajo').update(actualizacion).eq('id', id).select().single()
+    // Incluir fecha_cierre si viene del body o si se está cerrando la OT
+    const fechaParaGuardar = fecha_cierre || (estado === 'Cerrada' ? new Date().toISOString() : undefined)
+    if (fechaParaGuardar) actualizacion.fecha_cierre = fechaParaGuardar
+
+    // Primer intento: con todos los campos
+    let { data, error } = await supabase
+      .from('ordenes_trabajo').update(actualizacion).eq('id', id).select().single()
+
+    // Si falla por columna fecha_cierre inexistente → reintentar sin ella
+    if (error && (error.message?.includes('fecha_cierre') || error.code === '42703')) {
+      console.warn('[ordenes.js] Columna fecha_cierre no existe todavía, reintentando sin ella...')
+      const { fecha_cierre: _omit, ...sinFechaCierre } = actualizacion
+      const retry = await supabase
+        .from('ordenes_trabajo').update(sinFechaCierre).eq('id', id).select().single()
+      data  = retry.data
+      error = retry.error
+    }
 
     if (error) {
       if (error.code === 'PGRST116') return res.status(404).json({ success: false, error: 'OT no encontrada' })
+      console.error('[ordenes.js] Error al actualizar OT:', error.message)
       throw error
     }
 
     res.json({ success: true, mensaje: 'OT actualizada exitosamente', data })
   } catch (error) {
+    console.error('[ordenes.js] PUT catch:', error.message)
     res.status(500).json({ success: false, error: 'Error al actualizar la OT', detalle: error.message })
   }
 })
+
 
 // ============================================================
 // DELETE /api/ordenes/:id - Eliminar OT

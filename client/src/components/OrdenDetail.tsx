@@ -27,6 +27,7 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
   const [orden, setOrden] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [saveError, setSaveError] = useState('');
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   
   // Estado para el cierre
@@ -35,8 +36,15 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
     trabajo_realizado: '',
     causa_raiz: '',
     tiempo_reparacion_horas: 0,
-    firma_cierre: ''
+    firma_cierre: '',
+    fecha_cierre: '' as string   // ISO cuando se selecciona "Cerrada"
   });
+
+  // Calcula horas entre dos fechas ISO (redondeado a 2 decimales)
+  const calcularHoras = (inicio: string, fin: string): number => {
+    const diff = new Date(fin).getTime() - new Date(inicio).getTime()
+    return Math.max(0, Math.round((diff / 3_600_000) * 100) / 100)
+  };
 
   const fetchDetail = async () => {
     try {
@@ -45,12 +53,15 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
       
       const ordenData = data.data || data.orden || data;
       setOrden(ordenData);
+      const yaFechaCierre = ordenData.fecha_cierre || '';
+      const tiempoGuardado = ordenData.tiempo_reparacion_horas || 0;
       setClosingData({
         estado: ordenData.estado,
         trabajo_realizado: ordenData.trabajo_realizado || '',
         causa_raiz: ordenData.causa_raiz || '',
-        tiempo_reparacion_horas: ordenData.tiempo_reparacion_horas || 0,
-        firma_cierre: ordenData.firma_cierre || ''
+        tiempo_reparacion_horas: tiempoGuardado,
+        firma_cierre: ordenData.firma_cierre || '',
+        fecha_cierre: yaFechaCierre
       });
     } catch (err: any) {
       setError(err.message);
@@ -69,13 +80,13 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaveError('');
     try {
       await actualizarOrden(ordenId, closingData);
-      
       onUpdated();
       fetchDetail();
     } catch (err: any) {
-      alert(err.message);
+      setSaveError(err.message);
     }
   };
 
@@ -191,7 +202,22 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
                   <select 
                     className="form-select"
                     value={closingData.estado}
-                    onChange={(e) => setClosingData({...closingData, estado: e.target.value})}
+                    onChange={(e) => {
+                      const nuevoEstado = e.target.value;
+                      if (nuevoEstado === 'Cerrada') {
+                        // Calcular automáticamente al cambiar a Cerrada
+                        const ahora = new Date().toISOString();
+                        const horas = calcularHoras(orden.created_at, ahora);
+                        setClosingData(prev => ({
+                          ...prev,
+                          estado: nuevoEstado,
+                          fecha_cierre: ahora,
+                          tiempo_reparacion_horas: horas
+                        }));
+                      } else {
+                        setClosingData(prev => ({ ...prev, estado: nuevoEstado, fecha_cierre: '' }));
+                      }
+                    }}
                   >
                     <option value="Abierta">Abierta</option>
                     <option value="En proceso">En proceso</option>
@@ -200,15 +226,81 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
                   </select>
                 </div>
 
+                {/* Tiempo de Reparación — auto-calculado al cerrar */}
                 <div className="form-group">
-                  <label className="form-label">Tiempo de Reparación (Horas)</label>
-                  <input 
-                    type="number" 
-                    step="0.1" 
-                    className="form-input" 
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Tiempo de Reparación (Horas)</span>
+                    {closingData.estado === 'Cerrada' && (
+                      <span style={{
+                        fontSize: '10px',
+                        background: 'var(--accent-emerald-glow)',
+                        color: 'var(--accent-emerald)',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontWeight: 700,
+                        letterSpacing: '0.5px'
+                      }}>
+                        ⏱ CALCULADO
+                      </span>
+                    )}
+                  </label>
+
+                  {/* Campo: solo lectura si estado es Cerrada */}
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="form-input"
+                    readOnly={closingData.estado === 'Cerrada'}
+                    style={closingData.estado === 'Cerrada' ? {
+                      background: 'var(--bg-input)',
+                      color: 'var(--accent-emerald)',
+                      fontWeight: 700,
+                      fontSize: '18px',
+                      cursor: 'not-allowed',
+                      borderColor: 'rgba(16,185,129,0.4)'
+                    } : {}}
                     value={closingData.tiempo_reparacion_horas}
-                    onChange={(e) => setClosingData({...closingData, tiempo_reparacion_horas: parseFloat(e.target.value)})}
+                    onChange={(e) => {
+                      if (closingData.estado !== 'Cerrada') {
+                        setClosingData({...closingData, tiempo_reparacion_horas: parseFloat(e.target.value) || 0})
+                      }
+                    }}
                   />
+
+                  {/* Desglose de cálculo */}
+                  {closingData.estado === 'Cerrada' && closingData.fecha_cierre && (
+                    <div style={{
+                      marginTop: '8px',
+                      padding: '10px 12px',
+                      background: 'var(--bg-secondary)',
+                      borderRadius: 'var(--radius-sm)',
+                      borderLeft: '3px solid var(--accent-emerald)',
+                      fontSize: '11px',
+                      color: 'var(--text-muted)',
+                      lineHeight: '1.8'
+                    }}>
+                      <div>
+                        📅 <strong style={{ color: 'var(--text-secondary)' }}>Apertura:</strong>{' '}
+                        {new Date(orden.created_at).toLocaleString('es-MX', {
+                          day: '2-digit', month: 'short', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </div>
+                      <div>
+                        🔒 <strong style={{ color: 'var(--accent-emerald)' }}>Cierre:</strong>{' '}
+                        {new Date(closingData.fecha_cierre).toLocaleString('es-MX', {
+                          day: '2-digit', month: 'short', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </div>
+                      <div style={{ marginTop: '4px', borderTop: '1px solid var(--border-color)', paddingTop: '4px' }}>
+                        ⏱ <strong style={{ color: 'var(--accent-emerald)', fontSize: '12px' }}>
+                          {closingData.tiempo_reparacion_horas} hrs
+                        </strong>
+                        {' '}= (Cierre &minus; Apertura)
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -243,6 +335,24 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
                     onChange={(e) => setClosingData({...closingData, firma_cierre: e.target.value})}
                   />
                 </div>
+
+                {/* Error de guardado */}
+                {saveError && (
+                  <div style={{
+                    background: 'var(--accent-red-glow)',
+                    border: '1px solid rgba(239,68,68,0.4)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '10px 14px',
+                    fontSize: '13px',
+                    color: 'var(--accent-red)',
+                    lineHeight: '1.6'
+                  }}>
+                    <strong style={{ display: 'block', marginBottom: '4px' }}>⚠️ No se pudo guardar:</strong>
+                    {saveError.split(' | ').map((msg, i) => (
+                      <div key={i}>• {msg}</div>
+                    ))}
+                  </div>
+                )}
 
                 <button type="submit" className="btn btn-primary w-full mt-4">
                   <Save size={18} /> Guardar Cambios
