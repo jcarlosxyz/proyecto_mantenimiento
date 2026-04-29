@@ -6,6 +6,7 @@
 const express = require('express')
 const router = express.Router()
 const { supabase } = require('../supabaseClient')
+const { broadcast } = require('../lib/wsServer')
 
 // Función auxiliar para calcular fecha límite según prioridad
 function calcularFechaLimite(prioridad) {
@@ -160,22 +161,40 @@ router.post('/', async (req, res) => {
 
     if (error) throw error
 
-    // Actualizar estado del activo vinculado
+    // Actualizar estado del activo vinculado al abrir la OT
     let nuevoEstadoActivo = 'En mantenimiento'
     if (tipo_mantenimiento === 'Correctivo') {
       nuevoEstadoActivo = 'Fuera de servicio'
     }
-    
-    const { error: errorActivo } = await supabase
+
+    // ⚠️ Sin updated_at (no existe en tabla activos) y sin .single()
+    const { data: activosActualizados, error: errorActivo } = await supabase
       .from('activos')
       .update({ estado: nuevoEstadoActivo })
       .eq('tag', activo_tag.toUpperCase())
+      .select('id, tag, nombre, estado')
 
     if (errorActivo) {
-      console.warn(`OT creada, pero falló la actualización del estado del activo ${activo_tag}:`, errorActivo.message)
+      console.error(`[ordenes.js] ❌ OT creada, pero falló actualizar activo ${activo_tag}: ${errorActivo.message}`)
+    } else if (!activosActualizados || activosActualizados.length === 0) {
+      console.warn(`[ordenes.js] ⚠️ No se encontró ningún activo con tag "${activo_tag}"`)
+    } else {
+      const activoActualizado = activosActualizados[0]
+      console.log(`[ordenes.js] ✅ Activo "${activo_tag}" → ${nuevoEstadoActivo} (OT abierta)`)
+
+      // ⚡ Emitir evento WebSocket a todos los clientes
+      broadcast('activo_actualizado', {
+        activo_id:    activoActualizado.id,
+        tag:          activo_tag.toUpperCase(),
+        nombre:       activoActualizado.nombre ?? '',
+        estado_nuevo: nuevoEstadoActivo,
+        orden_id:     data.id,
+        numero_ot:    data.numero_ot
+      })
     }
 
     res.status(201).json({ success: true, mensaje: 'OT creada exitosamente', data })
+
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error al crear la OT', detalle: error.message })
   }
@@ -238,7 +257,55 @@ router.put('/:id', async (req, res) => {
       throw error
     }
 
+    // ── Actualizar estado del activo vinculado ──────────────────
+    if (estado && data?.activo_tag) {
+      let nuevoEstadoActivo = null
+
+      if (estado === 'Cerrada') {
+        nuevoEstadoActivo = 'Operativo'
+      } else if (estado === 'En proceso') {
+        nuevoEstadoActivo = 'En mantenimiento'
+      } else if (estado === 'Abierta') {
+        nuevoEstadoActivo = 'En mantenimiento'
+      }
+
+      console.log(`[ordenes.js] Intentando actualizar activo "${data.activo_tag}" → ${nuevoEstadoActivo}`)
+
+      if (nuevoEstadoActivo) {
+        // ⚠️ Sin updated_at (no existe en tabla activos) y sin .single() para evitar error si no hay match
+        const { data: activosActualizados, error: errActivo } = await supabase
+          .from('activos')
+          .update({ estado: nuevoEstadoActivo })
+          .eq('tag', data.activo_tag)
+          .select('id, tag, nombre, estado')
+
+        if (errActivo) {
+          console.error(`[ordenes.js] ❌ Falló actualizar activo "${data.activo_tag}": ${errActivo.message} (code: ${errActivo.code})`)
+        } else if (!activosActualizados || activosActualizados.length === 0) {
+          console.warn(`[ordenes.js] ⚠️ No se encontró ningún activo con tag "${data.activo_tag}"`)
+        } else {
+          const activoActualizado = activosActualizados[0]
+          console.log(`[ordenes.js] ✅ Activo "${data.activo_tag}" → ${nuevoEstadoActivo}`)
+
+          // ⚡ Emitir evento WebSocket a todos los clientes
+          broadcast('activo_actualizado', {
+            activo_id:    activoActualizado.id,
+            tag:          data.activo_tag,
+            nombre:       activoActualizado.nombre ?? '',
+            estado_nuevo: nuevoEstadoActivo,
+            orden_id:     id,
+            numero_ot:    data.numero_ot
+          })
+        }
+      }
+    } else {
+      console.log(`[ordenes.js] No se actualiza activo: estado="${estado}" activo_tag="${data?.activo_tag}"`)
+    }
+
+
+
     res.json({ success: true, mensaje: 'OT actualizada exitosamente', data })
+
   } catch (error) {
     console.error('[ordenes.js] PUT catch:', error.message)
     res.status(500).json({ success: false, error: 'Error al actualizar la OT', detalle: error.message })

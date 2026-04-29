@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { listarActivos, eliminarActivo, type Activo, type PaginationInfo, type ListParams } from '../api/activos'
 import { useToast } from '../components/Toast'
+import { useActivosWS, type EventoActivo } from '../hooks/useActivosWS'
 
 function CritBadge({ criticidad }: { criticidad: string }) {
   const cls = criticidad === 'A' ? 'badge-crit-a' : criticidad === 'B' ? 'badge-crit-b' : 'badge-crit-c'
@@ -42,6 +43,28 @@ export default function ActivosList() {
   const [criticidad, setCriticidad] = useState('')
   const [estado, setEstado] = useState('')
   const [pagina, setPagina] = useState(1)
+
+  // ⚡ Notificación WS tiempo real
+  const [wsNotif, setWsNotif] = useState<{
+    tag: string; nombre: string; estado_nuevo: string; numero_ot: string
+  } | null>(null)
+
+  useActivosWS(useCallback((evento: EventoActivo) => {
+    const { activo_id, tag, nombre, estado_nuevo, numero_ot } = evento.datos
+
+    // Actualizar solo el activo afectado en el estado local
+    setActivos(prev =>
+      prev.map(a =>
+        (a.id === activo_id || a.tag === tag)
+          ? { ...a, estado: estado_nuevo }
+          : a
+      )
+    )
+
+    // Notificación flotante
+    setWsNotif({ tag, nombre, estado_nuevo, numero_ot })
+    setTimeout(() => setWsNotif(null), 5000)
+  }, []))
 
   const fetchActivos = useCallback(async () => {
     setLoading(true)
@@ -96,6 +119,63 @@ export default function ActivosList() {
 
   return (
     <>
+      {/* ⚡ Notificación WebSocket — activo actualizado */}
+      {wsNotif && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 500,
+          background: 'var(--bg-card)',
+          border: '1px solid var(--accent-emerald)',
+          borderRadius: 'var(--radius-md)',
+          padding: '14px 18px',
+          boxShadow: '0 0 0 3px rgba(16,185,129,0.15), var(--shadow-lg)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '12px',
+          fontSize: '13px',
+          maxWidth: '360px',
+          animation: 'slideInRight 300ms ease'
+        }}>
+          <span style={{ fontSize: '20px', flexShrink: 0 }}>⚡</span>
+          <div>
+            <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+              Estado actualizado en tiempo real
+            </div>
+            <div style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              <strong style={{ color: 'var(--accent-blue)' }}>{wsNotif.tag}</strong>
+              {' '}{wsNotif.nombre && `— ${wsNotif.nombre}`}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+              <span style={{
+                background: wsNotif.estado_nuevo === 'Operativo'
+                  ? 'rgba(16,185,129,0.15)'
+                  : wsNotif.estado_nuevo === 'En mantenimiento'
+                    ? 'rgba(245,158,11,0.15)'
+                    : 'rgba(239,68,68,0.15)',
+                color: wsNotif.estado_nuevo === 'Operativo'
+                  ? 'var(--accent-emerald)'
+                  : wsNotif.estado_nuevo === 'En mantenimiento'
+                    ? '#f59e0b'
+                    : 'var(--accent-red)',
+                borderRadius: '100px',
+                padding: '2px 10px',
+                fontSize: '12px',
+                fontWeight: 700
+              }}>
+                {wsNotif.estado_nuevo}
+              </span>
+              {wsNotif.numero_ot && (
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  vía {wsNotif.numero_ot}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="stats-row">
         <div className="stat-card">
