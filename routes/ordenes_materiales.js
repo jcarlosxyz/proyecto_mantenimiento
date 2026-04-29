@@ -41,7 +41,7 @@ router.get('/', async (req, res) => {
 // ============================================================
 router.post('/', async (req, res) => {
   try {
-    const { orden_id, material_id, cantidad } = req.body
+    const { orden_id, material_id, cantidad, notas, fecha_instalacion } = req.body
 
     if (!orden_id || !material_id || !cantidad) {
       return res.status(400).json({ success: false, error: 'Orden, Material y Cantidad son obligatorios' })
@@ -63,14 +63,19 @@ router.post('/', async (req, res) => {
       orden_id,
       material_id,
       cantidad,
-      costo_unitario_aplicado: material.costo_unitario
+      costo_unitario_aplicado: material.costo_unitario,
+      notas: notas || null,
+      fecha_instalacion: fecha_instalacion || new Date().toISOString()
     }
 
-    const { data, error } = await supabase.from('ordenes_materiales').insert(nuevoRegistro).select().single()
+    const { data, error } = await supabase.from('ordenes_materiales').insert(nuevoRegistro).select(`
+      *,
+      materiales (nombre, unidad)
+    `).single()
 
     if (error) throw error
 
-    // 3. (Opcional) Descontar del inventario general en la tabla 'materiales'
+    // 3. Descontar del inventario general
     const nuevoStock = material.stock - cantidad
     await supabase.from('materiales').update({ stock: nuevoStock }).eq('id', material_id)
 

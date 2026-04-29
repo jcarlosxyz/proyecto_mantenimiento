@@ -6,6 +6,8 @@ export interface OrdenMaterial {
   material_id: string
   cantidad: number
   costo_unitario_aplicado: number
+  notas: string | null
+  fecha_instalacion: string
   created_at: string
   materiales?: {
     nombre: string
@@ -29,7 +31,13 @@ export async function listarOrdenesMateriales(params: ListOrdenMaterialParams = 
   return res.json()
 }
 
-export async function registrarConsumoMaterial(data: { orden_id: string, material_id: string, cantidad: number }) {
+export async function registrarConsumoMaterial(data: {
+  orden_id: string
+  material_id: string
+  cantidad: number
+  notas?: string
+  fecha_instalacion?: string
+}) {
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

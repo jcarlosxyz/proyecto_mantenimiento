@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { obtenerOrden, actualizarOrden } from '../api/ordenes';
 import { listarTecnicos, Tecnico } from '../api/tecnicos';
 import { compartirPorWhatsApp, DatosOT } from '../lib/whatsapp';
+import MaterialesOT from './MaterialesOT';
 import { 
   ArrowLeft, 
   Clock, 
@@ -163,15 +164,16 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
             </div>
           </div>
 
-          {/* Gestión de Materiales (Simplificado) */}
+          {/* Gestión de Materiales */}
           <div className="card">
             <div className="card-header">
               <h4 className="flex items-center gap-2"><Package size={18} className="text-purple-500" /> Materiales y Refacciones</h4>
             </div>
             <div className="card-body">
-               <div className="bg-input rounded-md p-8 text-center border border-dashed border-color">
-                  <p className="text-muted text-sm italic">Módulo de materiales en desarrollo para sincronización de almacén.</p>
-               </div>
+              <MaterialesOT
+                ordenId={ordenId}
+                ordenCerrada={orden.estado === 'Cerrada'}
+              />
             </div>
           </div>
         </div>
