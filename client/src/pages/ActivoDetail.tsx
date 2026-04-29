@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { obtenerActivo, eliminarActivo, cambiarEstado, type Activo } from '../api/activos'
+import { listarOrdenes, type OrdenTrabajo } from '../api/ordenes'
 import { useToast } from '../components/Toast'
 
 function formatDate(dateStr: string | null) {
@@ -49,6 +50,11 @@ export default function ActivoDetail() {
   const [estadoModal, setEstadoModal] = useState(false)
   const [nuevoEstado, setNuevoEstado] = useState('')
 
+  // Tabs y Historial
+  const [activeTab, setActiveTab] = useState<'detalles' | 'historial'>('detalles')
+  const [historial, setHistorial] = useState<OrdenTrabajo[]>([])
+  const [loadingHistorial, setLoadingHistorial] = useState(false)
+
   useEffect(() => {
     if (!id) return
     setLoading(true)
@@ -60,6 +66,20 @@ export default function ActivoDetail() {
       })
       .finally(() => setLoading(false))
   }, [id, navigate, showError])
+
+  // Cargar historial cuando se cambia a la pestaña y hay un activo
+  useEffect(() => {
+    if (activeTab === 'historial' && activo?.tag) {
+      setLoadingHistorial(true)
+      listarOrdenes({ activo_tag: activo.tag })
+        .then(res => {
+          const data = res.data || res.ordenes || res || []
+          setHistorial(data)
+        })
+        .catch(err => showError('Error al cargar historial: ' + err.message))
+        .finally(() => setLoadingHistorial(false))
+    }
+  }, [activeTab, activo?.tag, showError])
 
   const handleDelete = async () => {
     if (!id) return
@@ -109,6 +129,25 @@ export default function ActivoDetail() {
     { label: 'Última Actualización', value: formatDate(activo.updated_at) },
   ]
 
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case 'Abierta': return 'badge-operativo';
+      case 'En proceso': return 'badge-mantenimiento';
+      case 'En espera': return 'badge-crit-b';
+      case 'Cerrada': return 'badge-area';
+      default: return '';
+    }
+  };
+
+  const getPriorityClass = (prio: string) => {
+    switch (prio) {
+      case 'P1 Emergencia': return 'badge-crit-a';
+      case 'P2 Urgente': return 'badge-crit-b';
+      case 'P3 Normal': return 'badge-crit-c';
+      default: return 'badge-area';
+    }
+  };
+
   return (
     <>
       {/* Back button */}
@@ -154,66 +193,144 @@ export default function ActivoDetail() {
         </div>
       </div>
 
-      {/* Fields Grid */}
-      <div className="detail-grid">
-        {fields.map(field => (
-          <div className="detail-field" key={field.label}>
-            <div className="detail-field-label">{field.label}</div>
-            <div className={`detail-field-value ${!field.value ? 'empty' : ''}`}
-              style={field.highlight ? { color: 'var(--accent-blue)', fontWeight: 700, letterSpacing: '1px' } : undefined}
-            >
-              {field.value || 'Sin dato'}
-            </div>
-          </div>
-        ))}
+      {/* Tabs Menu */}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+        <button 
+          className={`btn ${activeTab === 'detalles' ? 'btn-primary' : 'btn-ghost'}`}
+          onClick={() => setActiveTab('detalles')}
+        >
+          📄 Detalles Técnicos
+        </button>
+        <button 
+          className={`btn ${activeTab === 'historial' ? 'btn-primary' : 'btn-ghost'}`}
+          onClick={() => setActiveTab('historial')}
+        >
+          ⏱️ Historial de Intervenciones
+        </button>
       </div>
 
-      {/* Imagen */}
-      {activo.imagen_url && (
-        <div className="card" style={{ marginTop: '20px' }}>
-          <div className="card-header">
-            <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>🖼️ Imagen del Activo</span>
+      {activeTab === 'detalles' ? (
+        <>
+          {/* Fields Grid */}
+          <div className="detail-grid">
+            {fields.map(field => (
+              <div className="detail-field" key={field.label}>
+                <div className="detail-field-label">{field.label}</div>
+                <div className={`detail-field-value ${!field.value ? 'empty' : ''}`}
+                  style={field.highlight ? { color: 'var(--accent-blue)', fontWeight: 700, letterSpacing: '1px' } : undefined}
+                >
+                  {field.value || 'Sin dato'}
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="card-body" style={{ textAlign: 'center' }}>
-            <img 
-              src={activo.imagen_url} 
-              alt={`Imagen de ${activo.nombre}`} 
-              style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', objectFit: 'contain' }} 
-            />
-          </div>
-        </div>
-      )}
 
-      {/* Description */}
-      {activo.descripcion && (
-        <div className="card" style={{ marginTop: '20px' }}>
+          {/* Imagen */}
+          {activo.imagen_url && (
+            <div className="card" style={{ marginTop: '20px' }}>
+              <div className="card-header">
+                <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>🖼️ Imagen del Activo</span>
+              </div>
+              <div className="card-body" style={{ textAlign: 'center' }}>
+                <img 
+                  src={activo.imagen_url} 
+                  alt={`Imagen de ${activo.nombre}`} 
+                  style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', objectFit: 'contain' }} 
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Description */}
+          {activo.descripcion && (
+            <div className="card" style={{ marginTop: '20px' }}>
+              <div className="card-header">
+                <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>📝 Descripción</span>
+              </div>
+              <div className="card-body">
+                <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>{activo.descripcion}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Specs */}
+          {activo.especificaciones_tecnicas && (
+            <div className="card" style={{ marginTop: '16px' }}>
+              <div className="card-header">
+                <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>📐 Especificaciones Técnicas</span>
+              </div>
+              <div className="card-body">
+                <p style={{
+                  color: 'var(--text-secondary)',
+                  fontFamily: 'monospace',
+                  fontSize: '14px',
+                  lineHeight: 1.7,
+                  background: 'var(--bg-input)',
+                  padding: '12px 16px',
+                  borderRadius: 'var(--radius-md)'
+                }}>
+                  {activo.especificaciones_tecnicas}
+                </p>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="card">
           <div className="card-header">
-            <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>📝 Descripción</span>
+            <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>⏱️ Historial de Órdenes de Trabajo</span>
           </div>
           <div className="card-body">
-            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>{activo.descripcion}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Specs */}
-      {activo.especificaciones_tecnicas && (
-        <div className="card" style={{ marginTop: '16px' }}>
-          <div className="card-header">
-            <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-heading)' }}>📐 Especificaciones Técnicas</span>
-          </div>
-          <div className="card-body">
-            <p style={{
-              color: 'var(--text-secondary)',
-              fontFamily: 'monospace',
-              fontSize: '14px',
-              lineHeight: 1.7,
-              background: 'var(--bg-input)',
-              padding: '12px 16px',
-              borderRadius: 'var(--radius-md)'
-            }}>
-              {activo.especificaciones_tecnicas}
-            </p>
+            {loadingHistorial ? (
+              <div className="text-center py-8 text-muted">Cargando historial...</div>
+            ) : historial.length === 0 ? (
+              <div className="text-center py-8 text-muted">
+                <div style={{ fontSize: '32px', marginBottom: '8px' }}>📋</div>
+                No hay órdenes de trabajo registradas para este activo.
+              </div>
+            ) : (
+              <div className="table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Apertura</th>
+                      <th>OT Número</th>
+                      <th>Tipo</th>
+                      <th>Prioridad</th>
+                      <th>Técnico</th>
+                      <th>Estado</th>
+                      <th style={{ textAlign: 'right' }}>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historial.map(ot => (
+                      <tr key={ot.id}>
+                        <td style={{ whiteSpace: 'nowrap' }}>{new Date(ot.created_at).toLocaleDateString()}</td>
+                        <td className="detail-tag">{ot.numero_ot}</td>
+                        <td>{ot.tipo_mantenimiento}</td>
+                        <td>
+                          <span className={`badge ${getPriorityClass(ot.prioridad)}`}>
+                            <div className="badge-dot" />
+                            {ot.prioridad.split(' ')[0]}
+                          </span>
+                        </td>
+                        <td>{ot.tecnico_asignado}</td>
+                        <td>
+                          <span className={`badge ${getStatusClass(ot.estado)}`}>
+                            {ot.estado}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <Link to={`/ordenes-trabajo?ot_id=${ot.id}`} className="btn btn-secondary btn-sm">
+                            Ver OT
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}

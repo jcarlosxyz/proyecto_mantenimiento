@@ -157,18 +157,19 @@ const TecnicosPage: React.FC = () => {
               <div className="card-header pb-3" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 {/* Avatar */}
                 <div style={{
-                  width: '56px',
-                  height: '56px',
+                  width: '84px',
+                  height: '84px',
                   borderRadius: '50%',
                   overflow: 'hidden',
                   flexShrink: 0,
-                  border: '2px solid var(--border-color)',
+                  border: '3px solid var(--accent-blue)',
+                  boxShadow: '0 0 0 4px var(--accent-blue-glow)',
                   background: 'var(--bg-input)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '18px',
-                  fontWeight: 700,
+                  fontSize: '27px',
+                  fontWeight: 800,
                   color: 'var(--accent-blue)',
                   letterSpacing: '0.5px'
                 }}>

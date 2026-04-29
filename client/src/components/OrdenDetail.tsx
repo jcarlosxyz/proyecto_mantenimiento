@@ -245,26 +245,22 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
                     )}
                   </label>
 
-                  {/* Campo: solo lectura si estado es Cerrada */}
+                  {/* Campo: de solo lectura siempre para evitar manipulación manual */}
                   <input
                     type="number"
                     step="0.01"
                     className="form-input"
-                    readOnly={closingData.estado === 'Cerrada'}
-                    style={closingData.estado === 'Cerrada' ? {
+                    readOnly={true}
+                    style={{
                       background: 'var(--bg-input)',
-                      color: 'var(--accent-emerald)',
-                      fontWeight: 700,
-                      fontSize: '18px',
+                      color: closingData.estado === 'Cerrada' ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                      fontWeight: closingData.estado === 'Cerrada' ? 700 : 400,
+                      fontSize: closingData.estado === 'Cerrada' ? '18px' : '14px',
                       cursor: 'not-allowed',
-                      borderColor: 'rgba(16,185,129,0.4)'
-                    } : {}}
-                    value={closingData.tiempo_reparacion_horas}
-                    onChange={(e) => {
-                      if (closingData.estado !== 'Cerrada') {
-                        setClosingData({...closingData, tiempo_reparacion_horas: parseFloat(e.target.value) || 0})
-                      }
+                      borderColor: closingData.estado === 'Cerrada' ? 'rgba(16,185,129,0.4)' : 'var(--border-color)',
+                      opacity: closingData.estado === 'Cerrada' ? 1 : 0.6
                     }}
+                    value={closingData.tiempo_reparacion_horas}
                   />
 
                   {/* Desglose de cálculo */}

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { listarOrdenes } from '../api/ordenes';
 import { listarTecnicos, Tecnico } from '../api/tecnicos';
+import { listarActivos, type Activo } from '../api/activos';
 import { 
   Plus, 
   Search, 
@@ -33,13 +35,36 @@ const OrdenesPage: React.FC = () => {
   const [filtroPrioridad, setFiltroPrioridad] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedId, setSelectedId] = useState<string | null>(searchParams.get('ot_id'));
+
+  useEffect(() => {
+    const otIdQuery = searchParams.get('ot_id');
+    if (otIdQuery) {
+      setSelectedId(otIdQuery);
+    } else {
+      setSelectedId(null);
+    }
+  }, [searchParams]);
+
+  // Limpiar el query param cuando se cierra el detalle de la orden
+  const handleCloseDetail = () => {
+    setSelectedId(null);
+    searchParams.delete('ot_id');
+    setSearchParams(searchParams);
+  };
+
 
   // Mapa nombre → técnico para mostrar foto y datos
   const [tecnicoMap, setTecnicoMap] = useState<Record<string, Tecnico>>({})
   // Técnico sobre el que está el cursor (para el tooltip)
   const [hoveredTecnico, setHoveredTecnico] = useState<Tecnico | null>(null)
   const [tooltipPos, setTooltipPos]         = useState({ top: 0, left: 0 })
+
+  // Mapa tag → activo
+  const [activoMap, setActivoMap] = useState<Record<string, Activo>>({})
+  const [hoveredActivo, setHoveredActivo] = useState<Activo | null>(null)
+  const [tooltipActivoPos, setTooltipActivoPos] = useState({ top: 0, left: 0 })
 
   const fetchOrdenes = async () => {
     try {
@@ -68,13 +93,20 @@ const OrdenesPage: React.FC = () => {
     fetchOrdenes();
   }, [filtroEstado, filtroPrioridad]);
 
-  // Cargar técnicos una sola vez para el mapa de fotos
+  // Cargar técnicos y activos una sola vez para el mapa de fotos
   useEffect(() => {
     listarTecnicos().then(res => {
       const data: Tecnico[] = res.data || [];
       const map: Record<string, Tecnico> = {};
       data.forEach(t => { map[t.nombre] = t; });
       setTecnicoMap(map);
+    }).catch(() => {});
+
+    listarActivos().then(res => {
+      const data: Activo[] = res.data || [];
+      const map: Record<string, Activo> = {};
+      data.forEach(a => { map[a.tag] = a; });
+      setActivoMap(map);
     }).catch(() => {});
   }, []);
 
@@ -105,7 +137,7 @@ const OrdenesPage: React.FC = () => {
     return (
       <OrdenDetail 
         ordenId={selectedId} 
-        onBack={() => setSelectedId(null)} 
+        onBack={handleCloseDetail} 
         onUpdated={() => fetchOrdenes()}
       />
     );
@@ -113,7 +145,6 @@ const OrdenesPage: React.FC = () => {
 
   return (
     <div className="page-content">
-      {/* ... cabecera y filtros se mantienen igual ... */}
       <div className="detail-header">
         <div>
           <h2 className="detail-title">Órdenes de Trabajo</h2>
@@ -190,7 +221,18 @@ const OrdenesPage: React.FC = () => {
                   <tr key={ot.id}>
                     <td className="detail-tag">{ot.numero_ot}</td>
                     <td>
-                      <div className="flex items-center gap-2">
+                      <div 
+                        className="flex items-center gap-2"
+                        style={{ position: 'relative', cursor: 'default' }}
+                        onMouseEnter={(e) => {
+                          const act = activoMap[ot.activo_tag]
+                          if (!act) return
+                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                          setTooltipActivoPos({ top: rect.top + window.scrollY - 8, left: rect.left + window.scrollX })
+                          setHoveredActivo(act)
+                        }}
+                        onMouseLeave={() => setHoveredActivo(null)}
+                      >
                         <Wrench size={14} className="text-secondary" />
                         <strong>{ot.activo_tag}</strong>
                       </div>
@@ -379,6 +421,110 @@ const OrdenesPage: React.FC = () => {
                   fontWeight: 700, fontSize: '15px'
                 }}>
                   {hoveredTecnico.estado}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Flecha apuntando hacia abajo */}
+          <div style={{
+            width: 0, height: 0,
+            borderLeft:  '12px solid transparent',
+            borderRight: '12px solid transparent',
+            borderTop:   '12px solid var(--bg-card)',
+            margin: '0 24px',
+            filter: 'drop-shadow(0 3px 3px rgba(0,0,0,0.3))'
+          }} />
+        </div>
+      )}
+
+      {/* ── Tooltip de Activo (tamaño doble) ── */}
+      {hoveredActivo && (
+        <div
+          style={{
+            position: 'fixed',
+            top:  tooltipActivoPos.top - 330,
+            left: tooltipActivoPos.left,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            animation: 'fadeIn 150ms ease'
+          }}
+        >
+          {/* Tarjeta */}
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '28px',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
+            minWidth: '440px',
+            maxWidth: '520px'
+          }}>
+            {/* Cabecera: foto grande + tag/nombre */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px' }}>
+              {hoveredActivo.imagen_url ? (
+                <img
+                  src={hoveredActivo.imagen_url}
+                  alt={hoveredActivo.tag}
+                  style={{
+                    width: '104px', height: '104px',
+                    borderRadius: '16px', objectFit: 'cover',
+                    border: '3px solid var(--accent-emerald)',
+                    boxShadow: '0 0 0 6px rgba(16, 185, 129, 0.15)',
+                    flexShrink: 0
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: '104px', height: '104px', borderRadius: '16px',
+                  background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-blue))',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '44px', color: '#fff', flexShrink: 0,
+                  boxShadow: '0 0 0 6px rgba(16, 185, 129, 0.15)'
+                }}>
+                  ⚙️
+                </div>
+              )}
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '22px', color: 'var(--accent-emerald)', lineHeight: 1.2, marginBottom: '6px' }}>
+                  {hoveredActivo.tag}
+                </div>
+                <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-primary)', lineHeight: 1.3, marginBottom: '10px' }}>
+                  {hoveredActivo.nombre}
+                </div>
+                <div style={{
+                  fontSize: '13px',
+                  background: 'var(--accent-blue-glow)',
+                  color: 'var(--accent-blue)',
+                  borderRadius: '100px', padding: '4px 14px',
+                  display: 'inline-block', fontWeight: 700,
+                  letterSpacing: '0.3px'
+                }}>
+                  {hoveredActivo.area}
+                </div>
+              </div>
+            </div>
+
+            {/* Separador */}
+            <div style={{ borderTop: '1px solid var(--border-color)', marginBottom: '16px' }} />
+
+            {/* Detalles */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '20px' }}>⚡</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  Criticidad: <span style={{ color: 'var(--text-primary)', marginLeft: '4px' }}>{hoveredActivo.criticidad}</span>
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '20px' }}>
+                  {hoveredActivo.estado === 'Operativo' ? '🟢' : hoveredActivo.estado === 'En mantenimiento' ? '🔧' : '🔴'}
+                </span>
+                <span style={{
+                  color: hoveredActivo.estado === 'Operativo' ? 'var(--accent-emerald)' : hoveredActivo.estado === 'En mantenimiento' ? '#f59e0b' : 'var(--accent-red)',
+                  fontWeight: 700, fontSize: '15px'
+                }}>
+                  {hoveredActivo.estado}
                 </span>
               </div>
             </div>

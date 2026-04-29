@@ -50,10 +50,16 @@ router.post('/imagen', upload.single('imagen'), async (req, res) => {
     const { buffer, mimetype, originalname } = req.file
     const activoId = req.body.activo_id || 'temp'
 
+    // Sanitizar el ID/ruta para quitar acentos, 'ñ' y caracteres no válidos (Supabase Storage exige ASCII)
+    const safeFolder = activoId
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // quita acentos
+      .replace(/[^a-zA-Z0-9_\-\/]/g, "") // permite solo alfanuméricos, guiones, underscores y slashes
+
     // Generar nombre único para el archivo
     const ext = originalname.split('.').pop()
     const timestamp = Date.now()
-    const fileName = `${activoId}/${timestamp}.${ext}`
+    const fileName = `${safeFolder}/${timestamp}.${ext}`
 
     // Subir a Supabase Storage usando el cliente admin
     const { data, error } = await client.storage
