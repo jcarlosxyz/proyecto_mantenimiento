@@ -143,6 +143,31 @@ router.post('/', async (req, res) => {
 
     if (errores.length > 0) return res.status(400).json({ success: false, errores })
 
+    // ── Validación de estado del activo ──────────────────────────
+    const { data: activoCheck, error: errorCheck } = await supabase
+      .from('activos')
+      .select('tag, nombre, estado')
+      .eq('tag', activo_tag.toUpperCase())
+      .single()
+
+    if (errorCheck || !activoCheck) {
+      return res.status(404).json({
+        success: false,
+        error: `No se encontró el activo con TAG "${activo_tag.toUpperCase()}"`
+      })
+    }
+
+    const estadosBloqueados = ['En mantenimiento', 'Fuera de servicio']
+    if (estadosBloqueados.includes(activoCheck.estado)) {
+      return res.status(409).json({
+        success: false,
+        error: `No se puede crear una OT para el activo "${activoCheck.tag}" — ${activoCheck.nombre}`,
+        detalle: `El activo se encuentra actualmente en estado "${activoCheck.estado}". Debe estar "Operativo" para generar una nueva orden de trabajo.`,
+        estado_activo: activoCheck.estado
+      })
+    }
+    // ─────────────────────────────────────────────────────────────
+
     const numero_ot = await generarNumeroOT()
     const fecha_limite_inicio = calcularFechaLimite(prioridad)
 

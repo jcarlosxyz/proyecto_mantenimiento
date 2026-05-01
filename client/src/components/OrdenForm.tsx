@@ -11,7 +11,7 @@ interface OrdenFormProps {
 }
 
 const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
-  const [activos, setActivos] = useState<{tag: string, nombre: string}[]>([]);
+  const [activos, setActivos] = useState<{tag: string, nombre: string, estado: string}[]>([]);
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   const [formData, setFormData] = useState({
     activo_tag: '',
@@ -22,6 +22,12 @@ const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errorDetalle, setErrorDetalle] = useState('');
+
+  // Estado del activo seleccionado
+  const activoSeleccionado = activos.find(a => a.tag === formData.activo_tag);
+  const estadosBloqueados = ['En mantenimiento', 'Fuera de servicio'];
+  const activoBloqueado = activoSeleccionado ? estadosBloqueados.includes(activoSeleccionado.estado) : false;
 
   // Estado de OT recién creada (para mostrar panel con botón WhatsApp)
   const [otCreada, setOtCreada] = useState<DatosOT | null>(null);
@@ -51,6 +57,7 @@ const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setErrorDetalle('');
 
     try {
       const res = await crearOrden(formData);
@@ -72,7 +79,10 @@ const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
       setTecTelefono(tecnicoSeleccionado?.telefono || '');
       onSuccess(); // Refresca la lista
     } catch (err: any) {
-      setError(err.message);
+      // El backend puede devolver { error, detalle } en el body
+      const body = err.responseBody || {};
+      setError(body.error || err.message);
+      setErrorDetalle(body.detalle || '');
     } finally {
       setLoading(false);
     }
@@ -240,9 +250,18 @@ const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
 
         <form onSubmit={handleSubmit}>
           {error && (
-            <div className="detail-field mb-4 border-red-500 bg-red-500/10 text-red-500 flex items-center gap-2">
-              <AlertTriangle size={18} />
-              <span className="text-sm">{error}</span>
+            <div className="detail-field mb-4" style={{
+              borderColor: 'rgba(239,68,68,0.5)',
+              background: 'rgba(239,68,68,0.08)',
+              display: 'flex', flexDirection: 'column', gap: '4px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-red)' }}>
+                <AlertTriangle size={18} />
+                <span style={{ fontSize: '14px', fontWeight: 600 }}>{error}</span>
+              </div>
+              {errorDetalle && (
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)', paddingLeft: '26px' }}>{errorDetalle}</span>
+              )}
             </div>
           )}
 
@@ -253,13 +272,47 @@ const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
                 className="form-select"
                 required
                 value={formData.activo_tag}
-                onChange={(e) => setFormData({...formData, activo_tag: e.target.value})}
+                onChange={(e) => {
+                  setError('');
+                  setErrorDetalle('');
+                  setFormData({...formData, activo_tag: e.target.value});
+                }}
+                style={activoBloqueado ? { borderColor: '#f59e0b', boxShadow: '0 0 0 2px rgba(245,158,11,0.2)' } : {}}
               >
                 <option value="">Seleccione un activo...</option>
-                {activos.map(a => (
-                  <option key={a.tag} value={a.tag}>{a.tag} - {a.nombre}</option>
-                ))}
+                {activos.map(a => {
+                  const bloqueado = estadosBloqueados.includes(a.estado);
+                  return (
+                    <option key={a.tag} value={a.tag} disabled={bloqueado}
+                      style={bloqueado ? { color: '#6b7280' } : {}}>
+                      {bloqueado ? '🔒 ' : ''}{a.tag} - {a.nombre}{bloqueado ? ` (${a.estado})` : ''}
+                    </option>
+                  );
+                })}
               </select>
+
+              {/* Advertencia inline cuando el activo seleccionado está bloqueado */}
+              {activoBloqueado && activoSeleccionado && (
+                <div style={{
+                  marginTop: '8px',
+                  padding: '10px 14px',
+                  background: 'rgba(245,158,11,0.1)',
+                  border: '1px solid rgba(245,158,11,0.4)',
+                  borderRadius: 'var(--radius-sm)',
+                  display: 'flex', alignItems: 'flex-start', gap: '10px',
+                  fontSize: '13px'
+                }}>
+                  <AlertTriangle size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: '1px' }} />
+                  <div>
+                    <span style={{ fontWeight: 700, color: '#f59e0b' }}>Activo no disponible — </span>
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                      El activo <strong>{activoSeleccionado.tag}</strong> está en estado
+                      <strong style={{ color: '#f59e0b' }}> {activoSeleccionado.estado}</strong>.
+                      No es posible crear una OT hasta que vuelva a estar <strong>Operativo</strong>.
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="form-group">
@@ -320,7 +373,9 @@ const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
             <button type="button" onClick={onClose} className="btn btn-secondary">
               Cancelar
             </button>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
+            <button type="submit" className="btn btn-primary" disabled={loading || activoBloqueado}
+              title={activoBloqueado ? `No se puede crear OT: activo ${activoSeleccionado?.estado}` : ''}
+              style={activoBloqueado ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>
               <Save size={18} />
               {loading ? 'Guardando...' : 'Crear Orden de Trabajo'}
             </button>

@@ -57,8 +57,12 @@ export async function crearOrden(data: Partial<OrdenTrabajo>) {
     body: JSON.stringify(data)
   })
   if (!res.ok) {
-    const error = await res.json()
-    throw new Error(error.error || 'Error al crear OT')
+    const body = await res.json()
+    // Adjuntar el body completo al error para que los componentes
+    // puedan acceder a campos como 'detalle' y 'estado_activo'
+    const err: any = new Error(body.error || 'Error al crear OT')
+    err.responseBody = body
+    throw err
   }
   return res.json()
 }
