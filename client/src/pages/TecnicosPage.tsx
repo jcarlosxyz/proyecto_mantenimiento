@@ -9,7 +9,8 @@ import {
   Edit,
   Phone,
   Mail,
-  ShieldAlert
+  ShieldAlert,
+  Clock
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 
@@ -19,6 +20,17 @@ const getInitials = (nombre: string) => {
   if (parts.length === 0) return '?';
   if (parts.length === 1) return parts[0][0].toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+// Helper: color e icono por turno
+const getTurnoInfo = (turno?: string) => {
+  switch (turno) {
+    case 'Mañana':  return { emoji: '🌅', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',  label: 'Mañana' };
+    case 'Tarde':   return { emoji: '🌇', color: '#f97316', bg: 'rgba(249,115,22,0.12)',  label: 'Tarde' };
+    case 'Noche':   return { emoji: '🌙', color: '#818cf8', bg: 'rgba(129,140,248,0.12)', label: 'Noche' };
+    case 'Rotativo':return { emoji: '🔄', color: '#10b981', bg: 'rgba(16,185,129,0.12)',  label: 'Rotativo' };
+    default:        return null;
+  }
 };
 
 const TecnicosPage: React.FC = () => {
@@ -195,6 +207,31 @@ const TecnicosPage: React.FC = () => {
                   <div className="text-secondary" style={{ fontSize: '13px', marginTop: '2px' }}>
                     {tecnico.especialidad}
                   </div>
+                  {/* Badge de turno */}
+                  {(() => {
+                    const ti = getTurnoInfo(tecnico.turno);
+                    return ti ? (
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '5px',
+                        marginTop: '6px',
+                        background: ti.bg,
+                        color: ti.color,
+                        border: `1px solid ${ti.color}40`,
+                        borderRadius: '100px',
+                        padding: '2px 10px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        letterSpacing: '0.3px'
+                      }}>
+                        <Clock size={10} />
+                        {ti.emoji} {ti.label}
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: '6px', fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        Sin turno asignado
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 

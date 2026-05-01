@@ -423,6 +423,25 @@ const OrdenesPage: React.FC = () => {
                   {hoveredTecnico.estado}
                 </span>
               </div>
+              {hoveredTecnico.turno && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
+                  <span style={{ fontSize: '20px' }}>
+                    {hoveredTecnico.turno === 'Mañana' ? '🌅'
+                      : hoveredTecnico.turno === 'Tarde' ? '🌇'
+                      : hoveredTecnico.turno === 'Noche' ? '🌙'
+                      : '🔄'}
+                  </span>
+                  <span style={{ fontWeight: 600 }}>
+                    Turno{' '}
+                    <span style={{
+                      color: hoveredTecnico.turno === 'Mañana' ? '#f59e0b'
+                        : hoveredTecnico.turno === 'Tarde' ? '#f97316'
+                        : hoveredTecnico.turno === 'Noche' ? '#818cf8'
+                        : '#10b981'
+                    }}>{hoveredTecnico.turno}</span>
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

@@ -57,15 +57,20 @@ router.get('/:id', async (req, res) => {
 // ============================================================
 router.post('/', async (req, res) => {
   try {
-    const { nombre, especialidad, telefono, email, estado = 'Activo', foto_url } = req.body
+    const { nombre, especialidad, telefono, email, estado = 'Activo', foto_url, turno } = req.body
 
     const errores = []
     if (!nombre) errores.push('El nombre es obligatorio')
     if (!especialidad) errores.push('La especialidad es obligatoria')
 
+    const turnosValidos = ['Mañana', 'Tarde', 'Noche', 'Rotativo']
+    if (turno && !turnosValidos.includes(turno)) {
+      errores.push(`El turno debe ser uno de: ${turnosValidos.join(', ')}`)
+    }
+
     if (errores.length > 0) return res.status(400).json({ success: false, errores })
 
-    const nuevoTecnico = { nombre, especialidad, telefono, email, estado, foto_url }
+    const nuevoTecnico = { nombre, especialidad, telefono, email, estado, foto_url, turno: turno || null }
 
     const { data, error } = await supabase.from('tecnicos').insert(nuevoTecnico).select().single()
 
@@ -83,7 +88,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { nombre, especialidad, telefono, email, estado, foto_url } = req.body
+    const { nombre, especialidad, telefono, email, estado, foto_url, turno } = req.body
 
     const actualizacion = {}
     if (nombre !== undefined) actualizacion.nombre = nombre
@@ -92,6 +97,7 @@ router.put('/:id', async (req, res) => {
     if (email !== undefined) actualizacion.email = email
     if (estado !== undefined) actualizacion.estado = estado
     if (foto_url !== undefined) actualizacion.foto_url = foto_url
+    if (turno !== undefined) actualizacion.turno = turno || null
 
     const { data, error } = await supabase
       .from('tecnicos')

@@ -17,7 +17,8 @@ const TecnicoForm: React.FC<TecnicoFormProps> = ({ tecnicoId, tecnico, onClose, 
     telefono: '',
     email: '',
     estado: 'Activo',
-    foto_url: ''
+    foto_url: '',
+    turno: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -32,7 +33,8 @@ const TecnicoForm: React.FC<TecnicoFormProps> = ({ tecnicoId, tecnico, onClose, 
         telefono: tecnico.telefono || '',
         email: tecnico.email || '',
         estado: tecnico.estado,
-        foto_url: tecnico.foto_url || ''
+        foto_url: tecnico.foto_url || '',
+        turno: tecnico.turno || ''
       });
     }
   }, [tecnico]);
@@ -185,6 +187,41 @@ const TecnicoForm: React.FC<TecnicoFormProps> = ({ tecnicoId, tecnico, onClose, 
                 <option value="Instrumentista">Instrumentista</option>
                 <option value="Sistemas">Sistemas</option>
               </select>
+            </div>
+
+            {/* ── Turno ── */}
+            <div className="form-group full-width">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                🗓️ Turno de Trabajo
+              </label>
+              <select
+                className="form-select"
+                value={formData.turno || ''}
+                onChange={(e) => setFormData({ ...formData, turno: e.target.value })}
+              >
+                <option value="">Sin turno asignado</option>
+                <option value="Mañana">🌅 Mañana (6:00 – 14:00)</option>
+                <option value="Tarde">🌇 Tarde (14:00 – 22:00)</option>
+                <option value="Noche">🌙 Noche (22:00 – 6:00)</option>
+                <option value="Rotativo">🔄 Rotativo</option>
+              </select>
+              {formData.turno && (
+                <div style={{
+                  marginTop: '8px', fontSize: '12px',
+                  color: 'var(--text-muted)',
+                  display: 'flex', alignItems: 'center', gap: '6px'
+                }}>
+                  <span style={{
+                    display: 'inline-block',
+                    width: '8px', height: '8px', borderRadius: '50%',
+                    background: formData.turno === 'Mañana' ? '#f59e0b'
+                      : formData.turno === 'Tarde' ? '#f97316'
+                      : formData.turno === 'Noche' ? '#6366f1'
+                      : '#10b981'
+                  }} />
+                  Turno <strong style={{ color: 'var(--text-primary)' }}>{formData.turno}</strong> seleccionado
+                </div>
+              )}
             </div>
 
             <div className="form-group">
