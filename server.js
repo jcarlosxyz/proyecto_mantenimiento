@@ -100,6 +100,10 @@ app.use('/api/materiales', materialesRoutes)
 const ordenesMatRoutes = require('./routes/ordenes_materiales')
 app.use('/api/ordenes-materiales', ordenesMatRoutes)
 
+// Módulo 4b - Planes de Mantenimiento (Preventivo)
+const planesRoutes = require('./routes/planes')
+app.use('/api/planes', planesRoutes)
+
 // Módulo 5 - Técnicos
 const tecnicosRoutes = require('./routes/tecnicos')
 app.use('/api/tecnicos', tecnicosRoutes)
