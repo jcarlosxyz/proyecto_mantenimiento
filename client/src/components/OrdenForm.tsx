@@ -275,7 +275,7 @@ const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
 
           <div className="form-grid">
             {/* Cabecera con Selectores Visuales (Activo y Técnico) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 full-width mb-2">
+            <div className="grid grid-cols-2 gap-6 full-width mb-2">
               {/* Columna Izquierda: Activo */}
               <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '20px', marginBottom: 0 }}>
                 <div className="shrink-0">

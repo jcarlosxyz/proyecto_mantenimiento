@@ -188,49 +188,21 @@ const PlanesPage: React.FC = () => {
             const tecnicoInfo = plan.tecnico_asignado ? tecnicoMap[plan.tecnico_asignado] : null;
 
             return (
-              <div key={plan.id} className="card relative flex h-full bg-[var(--bg-card)] border border-color hover:border-blue-500/30 transition-all p-4 rounded-xl shadow-sm hover:shadow-md">
+              <div key={plan.id} className="card flex flex-col h-full bg-[var(--bg-card)] border border-color hover:border-blue-500/30 transition-all p-4 rounded-xl shadow-sm hover:shadow-md">
                 
-                {/* Columna Izquierda (Detalles del Plan) */}
-                <div className="flex-1 flex flex-col min-w-0 pr-4">
-                  {/* 1. Foto y TAG de Activo */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="shrink-0">
-                      {activoInfo?.imagen_url ? (
-                        <img 
-                          src={activoInfo.imagen_url} 
-                          alt={plan.activo_tag}
-                          style={{
-                            width: '104px', height: '104px',
-                            borderRadius: '16px', objectFit: 'cover',
-                            border: '3px solid var(--accent-emerald)',
-                            boxShadow: '0 0 0 6px rgba(16, 185, 129, 0.15)'
-                          }}
-                        />
-                      ) : (
-                        <div style={{
-                          width: '104px', height: '104px', borderRadius: '16px',
-                          background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-blue))',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '44px', color: '#fff',
-                          boxShadow: '0 0 0 6px rgba(16, 185, 129, 0.15)'
-                        }}>
-                          ⚙️
-                        </div>
-                      )}
-                    </div>
+                {/* Contenido Superior del Plan */}
+                <div className="flex-1 flex flex-col min-w-0">
+                  {/* 1. TAG del Activo y Estado */}
+                  <div className="mb-4">
+                    <h3 className="font-bold text-[18px] text-white leading-tight truncate flex items-center gap-2">
+                      <Wrench size={16} className="text-secondary" />
+                      {plan.activo_tag}
+                    </h3>
 
-                    <div className="flex-1 min-w-0">
-                      {/* 2. TAG del Activo */}
-                      <h3 className="font-bold text-[18px] text-white leading-tight truncate">
-                        {plan.activo_tag}
-                      </h3>
-
-                      {/* 3. Badge Estado */}
-                      <div className="mt-2">
-                        <span className={`inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full ${plan.estado === 'Vencido' ? 'bg-red-500/20 text-red-400' : plan.estado === 'Próximo' ? 'bg-orange-500/20 text-orange-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                          {plan.estado}
-                        </span>
-                      </div>
+                    <div className="mt-2">
+                      <span className={`inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full ${plan.estado === 'Vencido' ? 'bg-red-500/20 text-red-400' : plan.estado === 'Próximo' ? 'bg-orange-500/20 text-orange-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                        {plan.estado}
+                      </span>
                     </div>
                   </div>
 
@@ -302,38 +274,16 @@ const PlanesPage: React.FC = () => {
                     <Trash2 size={16} />
                   </button>
                 </div>
-              </div>
 
-              {/* Columna Derecha (Técnico Asignado) */}
-              <div className="shrink-0 flex flex-col items-center pl-4">
-                {tecnicoInfo?.foto_url ? (
-                  <img 
-                    src={tecnicoInfo.foto_url} 
-                    alt={tecnicoInfo.nombre} 
-                    style={{
-                      width: '104px', height: '104px',
-                      borderRadius: '50%', objectFit: 'cover',
-                      border: '3px solid var(--accent-blue)',
-                      boxShadow: '0 0 0 6px var(--accent-blue-glow)',
-                      flexShrink: 0
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    width: '104px', height: '104px', borderRadius: '50%',
-                    background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '36px', fontWeight: 800, color: '#fff',
-                    boxShadow: '0 0 0 6px var(--accent-blue-glow)', flexShrink: 0
-                  }}>
-                    {tecnicoInfo ? getInitials(tecnicoInfo.nombre) : '👤'}
-                  </div>
-                )}
-                <span className="text-[13px] font-medium text-white text-center mt-3 break-words w-[104px]">
-                  {plan.tecnico_asignado ? plan.tecnico_asignado.split(' ')[0] : 'Sin asignar'}
-                </span>
+                {/* Técnico Asignado (Estilo texto compacto) */}
+                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-color w-full">
+                  <span className="text-[12px] text-gray-400 uppercase tracking-wider font-bold">Técnico:</span>
+                  <span className="text-[13px] text-white font-medium">
+                    {plan.tecnico_asignado || 'Sin asignar'}
+                  </span>
+                </div>
+                </div>
               </div>
-            </div>
             );
           })
         )}
