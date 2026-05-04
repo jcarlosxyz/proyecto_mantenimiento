@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { planesAPI, PlanMantenimiento } from '../api/planes';
+import { listarTecnicos, Tecnico } from '../api/tecnicos';
+import { listarActivos, Activo } from '../api/activos';
 import PlanForm from '../components/PlanForm';
-import { Calendar, Plus, Search, CheckCircle, AlertTriangle, XCircle, Play, Trash2, Activity } from 'lucide-react';
+import { Calendar, Plus, Search, CheckCircle, AlertTriangle, XCircle, Play, Trash2, Activity, Clock, Wrench } from 'lucide-react';
 import { useToast } from '../components/Toast';
 
 const PlanesPage: React.FC = () => {
@@ -12,6 +14,28 @@ const PlanesPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [planToEdit, setPlanToEdit] = useState<PlanMantenimiento | null>(null);
   const { showSuccess, showError } = useToast();
+
+  const [tecnicoMap, setTecnicoMap] = useState<Record<string, Tecnico>>({});
+  const [activoMap, setActivoMap] = useState<Record<string, Activo>>({});
+
+  useEffect(() => {
+    listarTecnicos().then(res => {
+      const data: Tecnico[] = res.data || [];
+      const map: Record<string, Tecnico> = {};
+      data.forEach(t => { map[t.nombre] = t; });
+      setTecnicoMap(map);
+    }).catch(() => {});
+
+    listarActivos().then(res => {
+      const data: Activo[] = res.data || [];
+      const map: Record<string, Activo> = {};
+      data.forEach(a => { map[a.tag] = a; });
+      setActivoMap(map);
+    }).catch(() => {});
+  }, []);
+
+  const getInitials = (nombre: string) =>
+    nombre.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase();
 
   const fetchPlanes = async () => {
     try {
@@ -159,89 +183,159 @@ const PlanesPage: React.FC = () => {
             No hay planes registrados o que coincidan con la búsqueda.
           </div>
         ) : (
-          planesFiltrados.map((plan) => (
-            <div key={plan.id} className="card relative group">
-              <div className="card-header pb-3">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-bold text-lg text-white" style={{ lineHeight: '1.2' }}>{plan.activo_tag}</h3>
-                  <div className="flex items-center gap-2">
-                    {getSemaforoIcon(plan.estado)}
-                    <span className={`badge ${getBadgeClass(plan.estado)}`}>
-                      {plan.estado}
-                    </span>
-                  </div>
-                </div>
-                <div className="text-secondary font-medium mt-1">
-                  {plan.tarea}
-                </div>
-              </div>
+          planesFiltrados.map((plan) => {
+            const activoInfo = activoMap[plan.activo_tag];
+            const tecnicoInfo = plan.tecnico_asignado ? tecnicoMap[plan.tecnico_asignado] : null;
 
-              <div className="card-body pt-0 space-y-3 text-sm text-muted">
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <div className="bg-input p-2 rounded">
-                    <span className="block text-xs opacity-70">Frecuencia</span>
-                    <span className="text-white font-medium">{plan.frecuencia_dias} días</span>
-                  </div>
-                  <div className="bg-input p-2 rounded">
-                    <span className="block text-xs opacity-70">Última Ejecución</span>
-                    <span className="text-white font-medium">{plan.ultima_ejecucion || 'Nunca'}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-2 rounded border border-color mt-2">
-                  <span className="text-xs">Técnico Asignado:</span>
-                  <span className="text-white font-medium">{plan.tecnico_asignado || 'Por Asignar'}</span>
-                </div>
-
-                <div className="flex items-center justify-between p-2 rounded border border-color mt-2">
-                  <span className="text-xs">Próxima Fecha:</span>
-                  <span className={`font-bold ${plan.estado === 'Vencido' ? 'text-red-400' : 'text-white'}`}>
-                    {plan.proxima_fecha}
-                  </span>
-                </div>
-
-                {plan.checklist && plan.checklist.length > 0 && (
-                  <div className="mt-3">
-                    <span className="text-xs font-semibold mb-1 block">Checklist ({plan.checklist.length} items):</span>
-                    <ul className="list-disc pl-4 text-xs opacity-80 space-y-1">
-                      {plan.checklist.slice(0, 3).map((item, i) => (
-                        <li key={i} className="truncate">{item}</li>
-                      ))}
-                      {plan.checklist.length > 3 && (
-                        <li className="text-blue-400 italic">+{plan.checklist.length - 3} más...</li>
+            return (
+              <div key={plan.id} className="card relative flex h-full bg-[var(--bg-card)] border border-color hover:border-blue-500/30 transition-all p-4 rounded-xl shadow-sm hover:shadow-md">
+                
+                {/* Columna Izquierda (Detalles del Plan) */}
+                <div className="flex-1 flex flex-col min-w-0 pr-4">
+                  {/* 1. Foto y TAG de Activo */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="shrink-0">
+                      {activoInfo?.imagen_url ? (
+                        <img 
+                          src={activoInfo.imagen_url} 
+                          alt={plan.activo_tag}
+                          style={{
+                            width: '104px', height: '104px',
+                            borderRadius: '16px', objectFit: 'cover',
+                            border: '3px solid var(--accent-emerald)',
+                            boxShadow: '0 0 0 6px rgba(16, 185, 129, 0.15)'
+                          }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: '104px', height: '104px', borderRadius: '16px',
+                          background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-blue))',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '44px', color: '#fff',
+                          boxShadow: '0 0 0 6px rgba(16, 185, 129, 0.15)'
+                        }}>
+                          ⚙️
+                        </div>
                       )}
-                    </ul>
-                  </div>
-                )}
+                    </div>
 
-                <div className="pt-4 flex gap-2 border-t border-color mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex-1 min-w-0">
+                      {/* 2. TAG del Activo */}
+                      <h3 className="font-bold text-[18px] text-white leading-tight truncate">
+                        {plan.activo_tag}
+                      </h3>
+
+                      {/* 3. Badge Estado */}
+                      <div className="mt-2">
+                        <span className={`inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full ${plan.estado === 'Vencido' ? 'bg-red-500/20 text-red-400' : plan.estado === 'Próximo' ? 'bg-orange-500/20 text-orange-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                          {plan.estado}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                {/* 4. Tarea */}
+                <p className="text-[13px] text-white/90 mb-4 line-clamp-3">
+                  {plan.tarea}
+                </p>
+
+                {/* (El técnico se movió a la columna derecha) */}
+
+                {/* 6. Detalles (Frecuencia, Última vez, Próxima) */}
+                <div className="flex flex-col gap-0.5 text-[12px] mb-4">
+                  <div className="flex items-center gap-1.5 text-gray-400 mt-1">
+                    <Activity size={12} /> Frecuencia
+                  </div>
+                  <div className="text-white">{plan.frecuencia_dias} días</div>
+
+                  <div className="flex items-center gap-1.5 text-gray-400 mt-2">
+                    <Calendar size={12} /> Última vez
+                  </div>
+                  <div className="text-white">{plan.ultima_ejecucion || 'Nunca'}</div>
+
+                  <div className="flex items-center gap-1.5 text-gray-400 mt-2">
+                    <Clock size={12} /> Próxima OT:
+                  </div>
+                  <div className="text-white">{plan.proxima_fecha}</div>
+
+                  {/* 7. Checklist */}
+                  {plan.checklist && plan.checklist.length > 0 && (
+                    <>
+                      <div className="flex items-center gap-1.5 text-gray-400 mt-2 mb-0.5">
+                        <CheckCircle size={12} /> Checklist ({plan.checklist.length} items)
+                      </div>
+                      <div className="text-white flex flex-col gap-0.5">
+                        {plan.checklist.slice(0, 3).map((item, i) => (
+                          <div key={i} className="truncate">{item}</div>
+                        ))}
+                        {plan.checklist.length > 3 && (
+                          <div className="text-blue-400">+{plan.checklist.length - 3} más...</div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex-1"></div>
+
+                {/* 8. Botones de Acción */}
+                <div className="flex items-center gap-3 mt-4 pt-2">
                   <button
-                    className="btn btn-primary flex-1 flex justify-center py-1 bg-green-600 hover:bg-green-500 text-white"
+                    className="bg-blue-600 hover:bg-blue-500 transition-colors text-white px-4 py-1.5 rounded-md text-[13px] font-medium flex items-center justify-center gap-1.5"
                     onClick={() => handleEjecutar(plan.id, plan.activo_tag)}
                   >
-                    <Play size={16} className="mr-1" /> Ejecutar PM
+                    <Play size={12} className="fill-current" /> Ejecutar
                   </button>
                   <button
-                    className="btn btn-ghost text-blue-400 hover:bg-blue-500/10 px-3"
+                    className="text-gray-400 hover:text-white transition-colors"
                     onClick={() => {
                       setPlanToEdit(plan);
                       setShowModal(true);
                     }}
-                    title="Editar plan"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                   </button>
                   <button
-                    className="btn btn-ghost text-red-500 hover:bg-red-500/10 px-3"
+                    className="text-gray-400 hover:text-red-400 transition-colors"
                     onClick={() => handleDelete(plan.id)}
-                    title="Eliminar plan"
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
               </div>
+
+              {/* Columna Derecha (Técnico Asignado) */}
+              <div className="shrink-0 flex flex-col items-center pl-4">
+                {tecnicoInfo?.foto_url ? (
+                  <img 
+                    src={tecnicoInfo.foto_url} 
+                    alt={tecnicoInfo.nombre} 
+                    style={{
+                      width: '104px', height: '104px',
+                      borderRadius: '50%', objectFit: 'cover',
+                      border: '3px solid var(--accent-blue)',
+                      boxShadow: '0 0 0 6px var(--accent-blue-glow)',
+                      flexShrink: 0
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '104px', height: '104px', borderRadius: '50%',
+                    background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '36px', fontWeight: 800, color: '#fff',
+                    boxShadow: '0 0 0 6px var(--accent-blue-glow)', flexShrink: 0
+                  }}>
+                    {tecnicoInfo ? getInitials(tecnicoInfo.nombre) : '👤'}
+                  </div>
+                )}
+                <span className="text-[13px] font-medium text-white text-center mt-3 break-words w-[104px]">
+                  {plan.tecnico_asignado ? plan.tecnico_asignado.split(' ')[0] : 'Sin asignar'}
+                </span>
+              </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
 

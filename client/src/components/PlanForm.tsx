@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { planesAPI } from '../api/planes';
 import { listarActivos, Activo } from '../api/activos';
 import { listarTecnicos, Tecnico } from '../api/tecnicos';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useToast } from './Toast';
 
 interface PlanFormProps {
@@ -66,6 +66,12 @@ const PlanForm: React.FC<PlanFormProps> = ({ onClose, onSuccess, planToEdit }) =
     setChecklist(checklist.filter((_, i) => i !== index));
   };
 
+  const getInitials = (nombre: string) =>
+    nombre.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase();
+
+  const activoSeleccionado = activos.find(a => a.tag === activoTag);
+  const tecnicoSeleccionado = tecnicos.find(t => t.nombre === tecnicoAsignado);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activoTag || !tarea || !frecuencia) {
@@ -98,44 +104,123 @@ const PlanForm: React.FC<PlanFormProps> = ({ onClose, onSuccess, planToEdit }) =
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content animate-fade-in" style={{ maxWidth: '550px' }}>
+      <div className="modal-content animate-fade-in" style={{ maxWidth: '850px', width: '95vw' }}>
         <div className="modal-header">
-          <h3 className="modal-title">Nuevo Plan de Mantenimiento Preventivo</h3>
+          <h3 className="modal-title">{planToEdit ? 'Editar Plan de Mantenimiento' : 'Nuevo Plan de Mantenimiento Preventivo'}</h3>
           <button className="modal-close" onClick={onClose}><X size={20} /></button>
         </div>
 
         <form className="modal-body" onSubmit={handleSubmit}>
-          
-          <div className="form-group">
-            <label className="form-label">Activo Vinculado <span className="text-red-500">*</span></label>
-            <select 
-              className="form-input" 
-              value={activoTag}
-              onChange={(e) => setActivoTag(e.target.value)}
-              required
-              disabled={loadingDatos}
-            >
-              <option value="">{loadingDatos ? 'Cargando activos...' : 'Seleccione un activo...'}</option>
-              {activos.map(a => (
-                <option key={a.id} value={a.tag}>{a.tag} - {a.nombre}</option>
-              ))}
-            </select>
-          </div>
+          <div className="space-y-4">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Columna Izquierda: Activo */}
+              <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '24px', marginBottom: 0 }}>
+                <div className="shrink-0">
+                  {activoSeleccionado ? (
+                  activoSeleccionado.imagen_url ? (
+                    <img 
+                      src={activoSeleccionado.imagen_url} 
+                      alt={activoSeleccionado.tag} 
+                      style={{
+                        width: '104px', height: '104px',
+                        borderRadius: '16px', objectFit: 'cover',
+                        border: '3px solid var(--accent-emerald)',
+                        boxShadow: '0 0 0 6px rgba(16, 185, 129, 0.15)'
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '104px', height: '104px', borderRadius: '16px',
+                      background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-blue))',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '44px', color: '#fff',
+                      boxShadow: '0 0 0 6px rgba(16, 185, 129, 0.15)'
+                    }}>
+                      ⚙️
+                    </div>
+                  )
+                ) : (
+                  <div style={{
+                    width: '104px', height: '104px', borderRadius: '16px',
+                    background: 'var(--bg-input)', border: '1px dashed var(--border-color)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.7
+                  }}>
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.2 }}>Sin<br/>activo</span>
+                  </div>
+                )}
+              </div>
 
-          <div className="form-group">
-            <label className="form-label">Técnico Asignado</label>
-            <select 
-              className="form-input" 
-              value={tecnicoAsignado}
-              onChange={(e) => setTecnicoAsignado(e.target.value)}
-              disabled={loadingDatos}
-            >
-              <option value="">{loadingDatos ? 'Cargando técnicos...' : 'Seleccione un técnico (opcional)...'}</option>
-              {tecnicos.map(t => (
-                <option key={t.id} value={t.nombre}>{t.nombre}</option>
-              ))}
-            </select>
-            <p className="text-xs text-muted mt-1">Este técnico se asignará automáticamente a las OT preventivas generadas.</p>
+              <div className="flex-1 flex flex-col gap-[6px]">
+                <label className="form-label mb-0">Activo Vinculado <span className="text-red-500">*</span></label>
+                <select 
+                  className="form-input w-full" 
+                  value={activoTag}
+                  onChange={(e) => setActivoTag(e.target.value)}
+                  required
+                  disabled={loadingDatos}
+                >
+                  <option value="">{loadingDatos ? 'Cargando activos...' : 'Seleccione un activo...'}</option>
+                  {activos.map(a => (
+                    <option key={a.id} value={a.tag}>{a.tag} - {a.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Columna Derecha: Técnico */}
+            <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '24px', marginBottom: 0 }}>
+              <div className="shrink-0">
+                {tecnicoSeleccionado ? (
+                tecnicoSeleccionado.foto_url ? (
+                  <img 
+                    src={tecnicoSeleccionado.foto_url} 
+                    alt={tecnicoSeleccionado.nombre} 
+                    style={{
+                      width: '104px', height: '104px',
+                      borderRadius: '50%', objectFit: 'cover',
+                      border: '3px solid var(--accent-blue)',
+                      boxShadow: '0 0 0 6px var(--accent-blue-glow)'
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '104px', height: '104px', borderRadius: '50%',
+                    background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '36px', fontWeight: 800, color: '#fff',
+                    boxShadow: '0 0 0 6px var(--accent-blue-glow)'
+                  }}>
+                    {getInitials(tecnicoSeleccionado.nombre)}
+                  </div>
+                )
+              ) : (
+                <div style={{
+                  width: '104px', height: '104px', borderRadius: '50%',
+                  background: 'var(--bg-input)', border: '1px dashed var(--border-color)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.7
+                }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.2 }}>Sin<br/>foto</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 flex flex-col gap-[6px]">
+              <label className="form-label mb-0">Técnico Asignado</label>
+              <select 
+                className="form-input w-full" 
+                value={tecnicoAsignado}
+                onChange={(e) => setTecnicoAsignado(e.target.value)}
+                disabled={loadingDatos}
+              >
+                <option value="">{loadingDatos ? 'Cargando...' : 'Seleccione técnico...'}</option>
+                {tecnicos.map(t => (
+                  <option key={t.id} value={t.nombre}>{t.nombre}</option>
+                ))}
+              </select>
+              <p className="text-xs text-muted m-0">Se asignará a las OT preventivas.</p>
+            </div>
+          </div>
           </div>
 
           <div className="form-group">
@@ -212,8 +297,9 @@ const PlanForm: React.FC<PlanFormProps> = ({ onClose, onSuccess, planToEdit }) =
               </ul>
             )}
           </div>
+          </div>
 
-          <div className="modal-footer mt-6">
+          <div className="modal-footer mt-6 pt-4 border-t border-color">
             <button type="button" className="btn btn-ghost" onClick={onClose} disabled={saving}>
               Cancelar
             </button>
