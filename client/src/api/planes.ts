@@ -10,6 +10,8 @@ export interface PlanMantenimiento {
   proxima_fecha: string
   estado: string
   checklist: string[]
+  cerrado: boolean
+  fecha_cierre: string | null
   created_at: string
 }
 
@@ -53,6 +55,16 @@ export const planesAPI = {
   // Ejecutar plan (generar OT)
   ejecutar: async (id: string): Promise<any> => {
     const res = await fetch(`${API_URL}/planes/${id}/ejecutar`, {
+      method: 'POST'
+    })
+    const json = await res.json()
+    if (!json.success) throw new Error(json.error)
+    return json
+  },
+
+  // Cerrar plan (ya no aparece en activos)
+  cerrar: async (id: string): Promise<any> => {
+    const res = await fetch(`${API_URL}/planes/${id}/cerrar`, {
       method: 'POST'
     })
     const json = await res.json()

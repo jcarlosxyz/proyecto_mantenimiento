@@ -3,13 +3,14 @@ import { planesAPI, PlanMantenimiento } from '../api/planes';
 import { listarTecnicos, Tecnico } from '../api/tecnicos';
 import { listarActivos, Activo } from '../api/activos';
 import PlanForm from '../components/PlanForm';
-import { Calendar, Plus, Search, CheckCircle, AlertTriangle, XCircle, Play, Trash2, Activity, Clock, Wrench } from 'lucide-react';
+import { Calendar, Plus, Search, CheckCircle, Play, Trash2, Activity, Clock, Wrench, XCircle, Archive } from 'lucide-react';
 import { useToast } from '../components/Toast';
 
 const PlanesPage: React.FC = () => {
   const [planes, setPlanes] = useState<PlanMantenimiento[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [pestana, setPestana] = useState<'activos' | 'cerrados'>('activos');
   
   const [showModal, setShowModal] = useState(false);
   const [planToEdit, setPlanToEdit] = useState<PlanMantenimiento | null>(null);
@@ -65,6 +66,17 @@ const PlanesPage: React.FC = () => {
       }
     }
   };
+  const handleCerrar = async (id: string) => {
+    if (window.confirm('¿Deseas cerrar este plan? Ya no aparecerá en la lista de planes activos.')) {
+      try {
+        await planesAPI.cerrar(id);
+        showSuccess('Plan cerrado correctamente');
+        fetchPlanes();
+      } catch (err: any) {
+        showError(err.message || 'Error al cerrar el plan');
+      }
+    }
+  };
 
   const handleDelete = async (id: string) => {
     if (window.confirm('¿Estás seguro de eliminar este plan de mantenimiento?')) {
@@ -85,10 +97,17 @@ const PlanesPage: React.FC = () => {
     return 'badge-secondary';
   };
 
-  const planesFiltrados = planes.filter(p => 
+  const planesActivos = planes.filter(p => !p.cerrado && (
     p.activo_tag.toLowerCase().includes(busqueda.toLowerCase()) ||
     p.tarea.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  ));
+
+  const planesCerrados = planes.filter(p => p.cerrado && (
+    p.activo_tag.toLowerCase().includes(busqueda.toLowerCase()) ||
+    p.tarea.toLowerCase().includes(busqueda.toLowerCase())
+  ));
+
+  const planesFiltrados = pestana === 'activos' ? planesActivos : planesCerrados;
 
   // Calcular cumplimiento mensual
   const hoy = new Date();
@@ -99,6 +118,7 @@ const PlanesPage: React.FC = () => {
   let pendientes = 0;
 
   planes.forEach(p => {
+    if (p.cerrado) return; // excluir cerrados del KPI
     const fUltima = p.ultima_ejecucion ? new Date(p.ultima_ejecucion) : null;
     const fProxima = new Date(p.proxima_fecha);
 
@@ -114,6 +134,9 @@ const PlanesPage: React.FC = () => {
 
   const programados = ejecutados + pendientes;
   const porcentajeCumplimiento = programados === 0 ? 100 : Math.round((ejecutados / programados) * 100);
+
+  // Solo calcular sobre activos
+  const planesParaKPI = planes.filter(p => !p.cerrado);
 
   const getSemaforoIcon = (estado: string) => {
     if (estado === 'Al dia') return <span className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>;
@@ -172,6 +195,31 @@ const PlanesPage: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Pestañas: Activos / Cerrados */}
+      <div className="flex gap-3 mb-6">
+        <button
+          className={`btn ${pestana === 'activos' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => setPestana('activos')}
+        >
+          <Wrench size={18} />
+          Planes Activos
+          <span className={`ml-1 text-xs font-bold px-2 py-0.5 rounded-full ${pestana === 'activos' ? 'bg-white/20 text-white' : 'bg-gray-600 text-gray-300'}`}>
+            {planesActivos.length}
+          </span>
+        </button>
+        <button
+          className={`btn ${pestana === 'cerrados' ? 'btn-secondary' : 'btn-ghost'}`}
+          style={pestana === 'cerrados' ? { background: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' } : {}}
+          onClick={() => setPestana('cerrados')}
+        >
+          <Archive size={18} />
+          Planes Cerrados
+          <span className={`ml-1 text-xs font-bold px-2 py-0.5 rounded-full ${pestana === 'cerrados' ? 'bg-white/20 text-white' : 'bg-gray-700 text-gray-400'}`}>
+            {planesCerrados.length}
+          </span>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -250,30 +298,50 @@ const PlanesPage: React.FC = () => {
 
                 <div className="flex-1"></div>
 
-                {/* 8. Botones de Acción */}
-                <div className="flex items-center gap-3 mt-4 pt-2">
+                {/* 8. Botones de Acción (solo en activos) */}
+                {pestana === 'activos' && (
+                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-color flex-wrap">
                   <button
-                    className="bg-blue-600 hover:bg-blue-500 transition-colors text-white px-4 py-1.5 rounded-md text-[13px] font-medium flex items-center justify-center gap-1.5"
+                    className="btn btn-primary btn-sm flex items-center gap-1.5"
                     onClick={() => handleEjecutar(plan.id, plan.activo_tag)}
                   >
-                    <Play size={12} className="fill-current" /> Ejecutar
+                    <Play size={13} className="fill-current" /> Ejecutar
                   </button>
                   <button
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="btn btn-secondary btn-sm flex items-center gap-1.5"
                     onClick={() => {
                       setPlanToEdit(plan);
                       setShowModal(true);
                     }}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    Editar
                   </button>
                   <button
-                    className="text-gray-400 hover:text-red-400 transition-colors"
+                    className="btn btn-sm flex items-center gap-1.5"
+                    style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}
+                    title="Cerrar plan"
+                    onClick={() => handleCerrar(plan.id)}
+                  >
+                    <XCircle size={13} /> Cerrar
+                  </button>
+                  <button
+                    className="btn btn-sm flex items-center gap-1.5"
+                    style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}
                     onClick={() => handleDelete(plan.id)}
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={13} /> Eliminar
                   </button>
                 </div>
+                )}
+
+                {/* Badge de fecha cierre en planes cerrados */}
+                {pestana === 'cerrados' && plan.fecha_cierre && (
+                  <div className="mt-4 pt-2 border-t border-color flex items-center gap-2 text-xs text-gray-500">
+                    <Archive size={12} className="text-gray-500" />
+                    Cerrado el: {new Date(plan.fecha_cierre).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </div>
+                )}
 
                 {/* Técnico Asignado (Estilo texto compacto) */}
                 <div className="flex items-center gap-2 mt-4 pt-4 border-t border-color w-full">

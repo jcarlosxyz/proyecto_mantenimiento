@@ -6,6 +6,7 @@
 const express = require('express')
 const router = express.Router()
 const { supabase } = require('../supabaseClient')
+const { enviarCorreoOT } = require('../lib/emailService')
 
 // ============================================================
 // Función para calcular estado del plan
@@ -184,9 +185,72 @@ router.post('/:id/ejecutar', async (req, res) => {
       plan: { ...planActualizado, estado: calcularEstadoPlan(planActualizado.proxima_fecha) }
     })
 
+    // ── Enviar correo al técnico (no bloqueante) ──────────────────────────────
+    if (otData && otData.tecnico_asignado && otData.tecnico_asignado !== 'Por Asignar') {
+      setImmediate(async () => {
+        try {
+          const { data: tecnico } = await supabase
+            .from('tecnicos')
+            .select('nombre, email')
+            .ilike('nombre', `%${otData.tecnico_asignado}%`)
+            .limit(1)
+            .single()
+
+          const emailResult = await enviarCorreoOT(
+            otData,
+            tecnico?.email || null,
+            tecnico?.nombre || otData.tecnico_asignado
+          )
+          if (emailResult?.skipped) {
+            console.log(`[planes.js] ⚠️  Correo no enviado: ${emailResult.razon}`)
+          }
+        } catch (emailErr) {
+          console.error('[planes.js] ❌ Error al enviar correo:', emailErr.message)
+        }
+      })
+    }
+    // ─────────────────────────────────────────────────────────────
+
   } catch (error) {
     console.error('Error al ejecutar plan:', error.message)
     res.status(500).json({ success: false, error: 'Error al ejecutar plan', detalle: error.message })
+  }
+})
+
+// ============================================================
+// POST /api/planes/:id/cerrar - Cerrar un plan de mantenimiento
+// ============================================================
+router.post('/:id/cerrar', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const { data: plan, error: errPlan } = await supabase
+      .from('planes_mantenimiento')
+      .select('id, cerrado')
+      .eq('id', id)
+      .single()
+
+    if (errPlan || !plan) {
+      return res.status(404).json({ success: false, error: 'Plan no encontrado' })
+    }
+
+    const { data, error } = await supabase
+      .from('planes_mantenimiento')
+      .update({ 
+        cerrado: true,
+        fecha_cierre: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+
+    res.json({ success: true, mensaje: 'Plan cerrado correctamente', data })
+  } catch (error) {
+    console.error('Error al cerrar plan:', error.message)
+    res.status(500).json({ success: false, error: 'Error al cerrar plan', detalle: error.message })
   }
 })
 
