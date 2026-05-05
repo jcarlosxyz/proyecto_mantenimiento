@@ -7,6 +7,7 @@ const express = require('express')
 const router = express.Router()
 const { supabase } = require('../supabaseClient')
 const { broadcast } = require('../lib/wsServer')
+const { enviarCorreoOT } = require('../lib/emailService')
 
 // Función auxiliar para calcular fecha límite según prioridad
 function calcularFechaLimite(prioridad) {
@@ -219,6 +220,27 @@ router.post('/', async (req, res) => {
     }
 
     res.status(201).json({ success: true, mensaje: 'OT creada exitosamente', data })
+
+    // ── Enviar correo al técnico (no bloqueante) ──────────────
+    // Buscar el email del técnico por nombre para no bloquear la respuesta
+    setImmediate(async () => {
+      try {
+        const { data: tecnico } = await supabase
+          .from('tecnicos')
+          .select('nombre, email')
+          .ilike('nombre', `%${tecnico_asignado}%`)
+          .limit(1)
+          .single()
+
+        const emailResult = await enviarCorreoOT(data, tecnico?.email || null, tecnico?.nombre || tecnico_asignado)
+        if (emailResult?.skipped) {
+          console.log(`[ordenes.js] ⚠️  Correo no enviado: ${emailResult.razon}`)
+        }
+      } catch (emailErr) {
+        console.error('[ordenes.js] ❌ Error al enviar correo:', emailErr.message)
+      }
+    })
+    // ─────────────────────────────────────────────────────────
 
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error al crear la OT', detalle: error.message })
