@@ -7,7 +7,7 @@ const express = require('express')
 const router = express.Router()
 const { supabase } = require('../supabaseClient')
 const { broadcast } = require('../lib/wsServer')
-const { enviarCorreoOT } = require('../lib/emailService')
+const { enviarCorreoOT, enviarCorreoCierreOT } = require('../lib/emailService')
 
 // Función auxiliar para calcular fecha límite según prioridad
 function calcularFechaLimite(prioridad) {
@@ -352,6 +352,32 @@ router.put('/:id', async (req, res) => {
 
 
     res.json({ success: true, mensaje: 'OT actualizada exitosamente', data })
+
+    // ── Enviar correo de cierre al técnico (no bloqueante) ───────────
+    if (estado === 'Cerrada' && data?.tecnico_asignado) {
+      setImmediate(async () => {
+        try {
+          const { data: tecnico } = await supabase
+            .from('tecnicos')
+            .select('nombre, email')
+            .ilike('nombre', `%${data.tecnico_asignado}%`)
+            .limit(1)
+            .single()
+
+          const emailResult = await enviarCorreoCierreOT(
+            data,
+            tecnico?.email || null,
+            tecnico?.nombre || data.tecnico_asignado
+          )
+          if (emailResult?.skipped) {
+            console.log(`[ordenes.js] ⚠️  Correo cierre no enviado: ${emailResult.razon}`)
+          }
+        } catch (emailErr) {
+          console.error('[ordenes.js] ❌ Error al enviar correo de cierre:', emailErr.message)
+        }
+      })
+    }
+    // ─────────────────────────────────────────────────
 
   } catch (error) {
     console.error('[ordenes.js] PUT catch:', error.message)
