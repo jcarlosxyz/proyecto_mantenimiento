@@ -773,6 +773,8 @@ a:hover {
   border-radius: var(--radius-xl);
   width: 90%;
   max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
   padding: 28px;
   box-shadow: var(--shadow-lg);
   animation: slideUp 250ms ease;
