@@ -3,6 +3,8 @@ import { listarMateriales, eliminarMaterial, type Material, type PaginationInfo,
 import { useToast } from '../components/Toast'
 import MaterialForm from './materiales/MaterialForm'
 import { useInventarioWS, type EventoInventario } from '../hooks/useInventarioWS'
+import OrdenCompraModal from '../components/OrdenCompraModal'
+import OrdenesCompraActivasModal from '../components/OrdenesCompraActivasModal'
 
 export default function MaterialesList() {
   const { showSuccess, showError } = useToast()
@@ -13,6 +15,8 @@ export default function MaterialesList() {
   const [deleteModal, setDeleteModal] = useState<Material | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [formModal, setFormModal] = useState<{show: boolean, material: Material | null}>({ show: false, material: null })
+  const [ordenCompraModal, setOrdenCompraModal] = useState<Material | null>(null)
+  const [ordenesActivasModal, setOrdenesActivasModal] = useState<Material | null>(null)
 
   // Filtros
   const [buscar, setBuscar] = useState('')
@@ -32,7 +36,11 @@ export default function MaterialesList() {
     )
 
     // Mostrar notificación flotante
-    const accionLabel = accion === 'consumo' ? '↓ Consumo registrado' : '↑ Stock devuelto'
+    let accionLabel = ''
+    if (accion === 'consumo') accionLabel = '↓ Consumo registrado'
+    else if (accion === 'entrada') accionLabel = '📦 Entrada por Compra'
+    else accionLabel = '↑ Stock devuelto'
+    
     setWsNotif({ nombre, stock: stock_nuevo, accion: accionLabel })
     setTimeout(() => setWsNotif(null), 4000)
   }, []))
@@ -88,8 +96,8 @@ export default function MaterialesList() {
       {wsNotif && (
         <div style={{
           position: 'fixed',
-          top: '20px',
-          right: '20px',
+          bottom: '30px',
+          right: '30px',
           zIndex: 500,
           background: 'var(--bg-card)',
           border: '1px solid var(--accent-blue)',
@@ -263,6 +271,22 @@ export default function MaterialesList() {
                         <td style={{ textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                             <button
+                              className="btn btn-ghost"
+                              style={{ fontSize: '24px', padding: '2px 8px' }}
+                              onClick={() => setOrdenesActivasModal(m)}
+                              title="Ver Órdenes Activas"
+                            >
+                              📋
+                            </button>
+                            <button
+                              className="btn btn-ghost"
+                              style={{ fontSize: '24px', padding: '2px 8px' }}
+                              onClick={() => setOrdenCompraModal(m)}
+                              title="Crear Orden de Compra"
+                            >
+                              🛒
+                            </button>
+                            <button
                               className="btn btn-ghost btn-sm"
                               onClick={() => setFormModal({ show: true, material: m })}
                               title="Editar"
@@ -328,6 +352,22 @@ export default function MaterialesList() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Orden de Compra */}
+      {ordenCompraModal && (
+        <OrdenCompraModal
+          material={ordenCompraModal}
+          onClose={() => setOrdenCompraModal(null)}
+        />
+      )}
+
+      {/* Modal de Órdenes Activas */}
+      {ordenesActivasModal && (
+        <OrdenesCompraActivasModal
+          material={ordenesActivasModal}
+          onClose={() => setOrdenesActivasModal(null)}
+        />
       )}
     </>
   )

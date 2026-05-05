@@ -85,3 +85,12 @@ export async function eliminarMaterial(id: string) {
   }
   return res.json()
 }
+
+export async function obtenerConsumoHistorico(id: string) {
+  const res = await fetch(`${API_URL}/${id}/consumo`)
+  if (!res.ok) {
+    const error = await res.json()
+    throw new Error(error.error || 'Error al obtener consumo histórico')
+  }
+  return res.json()
+}

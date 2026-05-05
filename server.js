@@ -112,6 +112,10 @@ app.use('/api/tecnicos', tecnicosRoutes)
 const uploadRoutes = require('./routes/upload')
 app.use('/api/upload', uploadRoutes)
 
+// Módulo 6 - Órdenes de Compra
+const ordenesCompraRoutes = require('./routes/ordenes_compra')
+app.use('/api/ordenes-compra', ordenesCompraRoutes)
+
 // Módulo WhatsApp - Notificaciones de OT
 const whatsappRoutes = require('./routes/whatsapp')
 app.use('/api/whatsapp', whatsappRoutes)

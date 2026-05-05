@@ -65,6 +65,29 @@ router.get('/:id', async (req, res) => {
 })
 
 // ============================================================
+// GET /api/materiales/:id/consumo - Obtener consumo histórico
+// ============================================================
+router.get('/:id/consumo', async (req, res) => {
+  try {
+    const { id } = req.params
+    // Consultar todos los registros de ordenes_materiales para este material_id
+    const { data, error } = await supabase
+      .from('ordenes_materiales')
+      .select('cantidad')
+      .eq('material_id', id)
+
+    if (error) throw error
+
+    // Sumar las cantidades
+    const totalConsumo = data.reduce((sum, record) => sum + (Number(record.cantidad) || 0), 0)
+
+    res.json({ success: true, total: totalConsumo })
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error al obtener el consumo histórico', detalle: error.message })
+  }
+})
+
+// ============================================================
 // POST /api/materiales - Crear nuevo material
 // ============================================================
 router.post('/', async (req, res) => {
