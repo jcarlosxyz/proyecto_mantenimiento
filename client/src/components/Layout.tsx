@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 const navItems = [
+  { to: '/dashboard', icon: '📊', label: 'Dashboard' },
   { to: '/activos', icon: '⚙️', label: 'Activos' },
   { to: '/materiales', icon: '📦', label: 'Materiales' },
   { to: '/ordenes-trabajo', icon: '📋', label: 'Órdenes de Trabajo' },
@@ -13,6 +14,7 @@ export default function Layout() {
 
   const getPageTitle = () => {
     const path = location.pathname
+    if (path.startsWith('/dashboard')) return { title: 'Dashboard Ejecutivo', subtitle: 'KPIs en tiempo real del sistema' }
     if (path === '/activos/nuevo') return { title: 'Nuevo Activo', subtitle: 'Registrar un nuevo activo en el sistema' }
     if (path.endsWith('/editar')) return { title: 'Editar Activo', subtitle: 'Modificar datos del activo' }
     if (path.match(/^\/activos\/[^/]+$/)) return { title: 'Detalle de Activo', subtitle: 'Información completa del activo' }

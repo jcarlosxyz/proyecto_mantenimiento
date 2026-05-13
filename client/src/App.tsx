@@ -7,6 +7,7 @@ import MaterialesList from './pages/MaterialesList'
 import OrdenesPage from './pages/OrdenesPage'
 import TecnicosPage from './pages/TecnicosPage'
 import PlanesPage from './pages/PlanesPage'
+import DashboardPage from './pages/DashboardPage'
 import { ToastProvider } from './components/Toast'
 
 export default function App() {
@@ -15,7 +16,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
-            <Route path="/" element={<Navigate to="/activos" replace />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/activos" element={<ActivosList />} />
             <Route path="/activos/nuevo" element={<ActivoForm />} />
             <Route path="/activos/:id" element={<ActivoDetail />} />

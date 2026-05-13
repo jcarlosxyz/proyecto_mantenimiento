@@ -104,6 +104,10 @@ app.use('/api/ordenes-materiales', ordenesMatRoutes)
 const planesRoutes = require('./routes/planes')
 app.use('/api/planes', planesRoutes)
 
+// Módulo 3 - Dashboard de KPIs Ejecutivo
+const dashboardRoutes = require('./routes/dashboard')
+app.use('/api/dashboard', dashboardRoutes)
+
 // Módulo 5 - Técnicos
 const tecnicosRoutes = require('./routes/tecnicos')
 app.use('/api/tecnicos', tecnicosRoutes)
