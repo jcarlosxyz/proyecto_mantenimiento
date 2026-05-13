@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { obtenerDashboard, DashboardData } from '../api/dashboard'
-import { useDashboardWS } from '../hooks/useDashboardWS'
+import { useDashboardWS, EventoDashboard } from '../hooks/useDashboardWS'
 import {
   Activity, AlertTriangle, CheckCircle2, Clock, Package,
   Shield, Wrench, Users, Zap, RefreshCw, BarChart2,
@@ -75,7 +75,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState(new Date())
-  const [pulse, setPulse] = useState(false)
+  const [wsNotif, setWsNotif] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -91,10 +91,19 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  useDashboardWS(useCallback(() => {
+  useDashboardWS(useCallback((evento: EventoDashboard) => {
+    const labels: Record<string,string> = {
+      ot_creada:              '🔧 Nueva OT creada',
+      ot_actualizada:         '✅ OT actualizada',
+      activo_actualizado:     '⚙️ Estado de activo cambió',
+      inventario_actualizado: '📦 Stock de inventario cambió',
+      catalogo_actualizado:   '📋 Catálogo de materiales cambió',
+      plan_actualizado:       '🗓️ Plan PM actualizado',
+      tecnico_actualizado:    '👷 Técnicos actualizados',
+    }
+    setWsNotif(labels[evento.tipo] || `⚡ ${evento.tipo}`)
     fetchData()
-    setPulse(true)
-    setTimeout(() => setPulse(false), 2500)
+    setTimeout(() => setWsNotif(null), 4000)
   }, [fetchData]))
 
   if (loading) return (
@@ -131,9 +140,9 @@ export default function DashboardPage() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {pulse && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#10b981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '99px', padding: '5px 11px', animation: 'fadeIn 300ms ease' }}>
-              <Zap size={12} /> Actualizado en vivo
+          {wsNotif && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#10b981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '99px', padding: '5px 11px' }}>
+              <Zap size={12} /> {wsNotif}
             </div>
           )}
           <span style={{ fontSize: '11px', color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '6px 11px' }}>

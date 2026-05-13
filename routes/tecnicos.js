@@ -6,6 +6,7 @@
 const express = require('express')
 const router = express.Router()
 const { supabase } = require('../supabaseClient')
+const { broadcast } = require('../lib/wsServer')
 
 // ============================================================
 // GET /api/tecnicos - Listar todos los técnicos
@@ -76,6 +77,7 @@ router.post('/', async (req, res) => {
 
     if (error) throw error
 
+    broadcast('tecnico_actualizado', { accion: 'creado', tecnico_id: data.id, nombre: data.nombre })
     res.status(201).json({ success: true, mensaje: 'Técnico creado exitosamente', data })
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error al crear técnico', detalle: error.message })
@@ -111,6 +113,7 @@ router.put('/:id', async (req, res) => {
       throw error
     }
 
+    broadcast('tecnico_actualizado', { accion: 'actualizado', tecnico_id: data.id, nombre: data.nombre })
     res.json({ success: true, mensaje: 'Técnico actualizado', data })
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error al actualizar técnico', detalle: error.message })
@@ -127,6 +130,7 @@ router.delete('/:id', async (req, res) => {
 
     if (error) throw error
 
+    broadcast('tecnico_actualizado', { accion: 'eliminado', tecnico_id: id })
     res.json({ success: true, mensaje: 'Técnico eliminado exitosamente' })
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error al eliminar técnico', detalle: error.message })

@@ -220,6 +220,8 @@ router.post('/', async (req, res) => {
     }
 
     res.status(201).json({ success: true, mensaje: 'OT creada exitosamente', data })
+    // ⚡ Broadcast especifico de OT creada para el dashboard
+    broadcast('ot_creada', { numero_ot: data.numero_ot, activo_tag: data.activo_tag, tipo: data.tipo_mantenimiento, prioridad: data.prioridad, tecnico: data.tecnico_asignado })
 
     // ── Enviar correo al técnico (no bloqueante) ──────────────
     // Buscar el email del técnico por nombre para no bloquear la respuesta
@@ -352,6 +354,8 @@ router.put('/:id', async (req, res) => {
 
 
     res.json({ success: true, mensaje: 'OT actualizada exitosamente', data })
+    // ⚡ Broadcast especifico de OT actualizada para el dashboard
+    broadcast('ot_actualizada', { numero_ot: data.numero_ot, estado: data.estado, activo_tag: data.activo_tag, tecnico: data.tecnico_asignado })
 
     // ── Enviar correo de cierre al técnico (no bloqueante) ───────────
     if (estado === 'Cerrada' && data?.tecnico_asignado) {

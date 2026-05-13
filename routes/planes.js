@@ -7,6 +7,7 @@ const express = require('express')
 const router = express.Router()
 const { supabase } = require('../supabaseClient')
 const { enviarCorreoOT } = require('../lib/emailService')
+const { broadcast } = require('../lib/wsServer')
 
 // ============================================================
 // Función para calcular estado del plan
@@ -89,7 +90,7 @@ router.post('/', async (req, res) => {
 
     // Calcular estado
     data.estado = calcularEstadoPlan(data.proxima_fecha)
-
+    broadcast('plan_actualizado', { accion: 'creado', plan_id: data.id, activo_tag: data.activo_tag, tarea: data.tarea })
     res.status(201).json({ success: true, mensaje: 'Plan creado exitosamente', data })
   } catch (error) {
     console.error('Error al crear plan:', error.message)
@@ -178,9 +179,10 @@ router.post('/:id/ejecutar', async (req, res) => {
 
     if (errUpdatePlan) throw errUpdatePlan
 
+    broadcast('plan_actualizado', { accion: 'ejecutado', plan_id: plan.id, activo_tag: plan.activo_tag, numero_ot: otData.numero_ot })
     res.json({
-      success: true, 
-      mensaje: 'Plan ejecutado: OT Preventiva generada exitosamente', 
+      success: true,
+      mensaje: 'Plan ejecutado: OT Preventiva generada exitosamente',
       orden_trabajo: otData,
       plan: { ...planActualizado, estado: calcularEstadoPlan(planActualizado.proxima_fecha) }
     })
@@ -247,6 +249,7 @@ router.post('/:id/cerrar', async (req, res) => {
 
     if (error) throw error
 
+    broadcast('plan_actualizado', { accion: 'cerrado', plan_id: id })
     res.json({ success: true, mensaje: 'Plan cerrado correctamente', data })
   } catch (error) {
     console.error('Error al cerrar plan:', error.message)
@@ -295,6 +298,7 @@ router.put('/:id', async (req, res) => {
     if (error) throw error
 
     data.estado = calcularEstadoPlan(data.proxima_fecha)
+    broadcast('plan_actualizado', { accion: 'editado', plan_id: data.id, activo_tag: data.activo_tag })
     res.json({ success: true, mensaje: 'Plan actualizado exitosamente', data })
   } catch (error) {
     console.error('Error al actualizar plan:', error.message)
@@ -310,6 +314,7 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params
     const { error } = await supabase.from('planes_mantenimiento').delete().eq('id', id)
     if (error) throw error
+    broadcast('plan_actualizado', { accion: 'eliminado', plan_id: id })
     res.json({ success: true, mensaje: 'Plan eliminado exitosamente' })
   } catch (error) {
     console.error('Error al eliminar plan:', error.message)

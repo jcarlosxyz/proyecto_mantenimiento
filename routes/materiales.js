@@ -6,6 +6,7 @@
 const express = require('express')
 const router = express.Router()
 const { supabase } = require('../supabaseClient')
+const { broadcast } = require('../lib/wsServer')
 
 // ============================================================
 // GET /api/materiales - Listar materiales
@@ -114,6 +115,7 @@ router.post('/', async (req, res) => {
       throw error
     }
 
+    broadcast('catalogo_actualizado', { accion: 'creado', material_id: data.id, nombre: data.nombre, stock: data.stock })
     res.status(201).json({ success: true, mensaje: 'Material creado exitosamente', data })
   } catch (error) {
     console.error('Catch creating material:', error)
@@ -145,6 +147,7 @@ router.put('/:id', async (req, res) => {
       throw error
     }
 
+    broadcast('catalogo_actualizado', { accion: 'actualizado', material_id: data.id, nombre: data.nombre, stock: data.stock })
     res.json({ success: true, mensaje: 'Material actualizado exitosamente', data })
   } catch (error) {
     console.error('Catch updating material:', error)
@@ -163,6 +166,7 @@ router.delete('/:id', async (req, res) => {
       console.error('Error deleting material:', error)
       throw error
     }
+    broadcast('catalogo_actualizado', { accion: 'eliminado', material_id: id })
     res.json({ success: true, mensaje: 'Material eliminado exitosamente' })
   } catch (error) {
     console.error('Catch deleting material:', error)
