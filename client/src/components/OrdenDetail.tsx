@@ -149,12 +149,140 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
         <div className="lg:col-span-2 space-y-6">
           <div className="card">
             <div className="card-header">
-              <h4 className="flex items-center gap-2"><FileText size={18} className="text-blue-500" /> Información de la Falla</h4>
+              <h4 className="flex items-center gap-2">
+                {orden.tipo_mantenimiento === 'Preventivo' ? (
+                  <>
+                    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span style={{ color: 'var(--accent-emerald)' }}>Orden por Plan de Mantenimiento</span>
+                  </>
+                ) : (
+                  <><FileText size={18} className="text-blue-500" /> Información de la Falla</>
+                )}
+              </h4>
             </div>
             <div className="card-body">
-              <p className="text-secondary leading-relaxed bg-input p-4 rounded-md border border-color">
-                {orden.descripcion_problema}
-              </p>
+              {orden.tipo_mantenimiento === 'Preventivo' ? (() => {
+                // Parsear descripcion_problema: "Plan de Mantenimiento Preventivo: <tarea>\n\nChecklist:\n- [ ] item"
+                const raw: string = orden.descripcion_problema || ''
+                const tituloMatch = raw.match(/^Plan de Mantenimiento(?:\s+Preventivo)?:\s*(.+?)(?:\n|$)/i)
+                const titulo = tituloMatch ? tituloMatch[1].trim() : raw.split('\n')[0]
+                const checklistItems: string[] = raw
+                  .split('\n')
+                  .filter((l: string) => l.trim().startsWith('- [ ]'))
+                  .map((l: string) => l.replace(/^-\s*\[\s*\]\s*/, '').trim())
+
+                return (
+                  <div>
+                    {/* Header degradado PM */}
+                    <div style={{
+                      background: 'linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(59,130,246,0.08) 100%)',
+                      border: '1px solid rgba(16,185,129,0.3)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '16px 18px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '14px',
+                      marginBottom: checklistItems.length > 0 ? '14px' : '0',
+                      boxShadow: '0 0 24px rgba(16,185,129,0.06)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}>
+                      {/* Barra lateral animada */}
+                      <div style={{
+                        position: 'absolute', top: 0, left: 0, width: '3px', height: '100%',
+                        background: 'linear-gradient(180deg, #10b981, #3b82f6)',
+                        borderRadius: '2px 0 0 2px',
+                      }} />
+                      {/* Icono */}
+                      <div style={{
+                        width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                        background: 'linear-gradient(135deg,#10b981,#059669)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 4px 12px rgba(16,185,129,0.35)',
+                      }}>
+                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                          <path d="M9 12l2 2 4-4"/>
+                        </svg>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                          <span style={{
+                            fontSize: '10px', fontWeight: 800, letterSpacing: '1px',
+                            textTransform: 'uppercase', color: '#10b981',
+                            background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)',
+                            borderRadius: '99px', padding: '2px 8px',
+                          }}>PM · Preventivo</span>
+                          <span style={{
+                            fontSize: '10px', fontWeight: 700, letterSpacing: '0.5px',
+                            color: 'var(--text-muted)',
+                          }}>P3 Normal</span>
+                        </div>
+                        <div style={{
+                          fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)',
+                          lineHeight: 1.35,
+                        }}>{titulo}</div>
+                      </div>
+                    </div>
+
+                    {/* Checklist */}
+                    {checklistItems.length > 0 && (
+                      <div style={{
+                        background: 'var(--bg-input)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-md)',
+                        overflow: 'hidden',
+                      }}>
+                        <div style={{
+                          padding: '10px 16px',
+                          borderBottom: '1px solid var(--border-color)',
+                          display: 'flex', alignItems: 'center', gap: '7px',
+                          background: 'rgba(59,130,246,0.05)',
+                        }}>
+                          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                          </svg>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            Checklist de Tareas — {checklistItems.length} {checklistItems.length === 1 ? 'ítem' : 'ítems'}
+                          </span>
+                        </div>
+                        <div style={{ padding: '8px 0' }}>
+                          {checklistItems.map((item: string, i: number) => (
+                            <div key={i} style={{
+                              display: 'flex', alignItems: 'center', gap: '10px',
+                              padding: '8px 16px',
+                              borderBottom: i < checklistItems.length - 1 ? '1px solid var(--border-color)' : 'none',
+                              transition: 'background 200ms ease',
+                            }}>
+                              <div style={{
+                                width: 18, height: 18, borderRadius: 5, flexShrink: 0,
+                                border: '2px solid rgba(16,185,129,0.5)',
+                                background: 'rgba(16,185,129,0.06)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}>
+                                <div style={{ width: 6, height: 6, borderRadius: 2, background: 'rgba(16,185,129,0.3)' }} />
+                              </div>
+                              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{item}</span>
+                              <span style={{
+                                marginLeft: 'auto', fontSize: '10px', fontWeight: 600,
+                                color: 'var(--text-muted)', background: 'var(--bg-card)',
+                                border: '1px solid var(--border-color)', borderRadius: '4px',
+                                padding: '1px 6px', flexShrink: 0,
+                              }}>#{i + 1}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })() : (
+                <p className="text-secondary leading-relaxed bg-input p-4 rounded-md border border-color">
+                  {orden.descripcion_problema}
+                </p>
+              )}
               
               <div className="detail-grid mt-6">
                 <div className="detail-field">
