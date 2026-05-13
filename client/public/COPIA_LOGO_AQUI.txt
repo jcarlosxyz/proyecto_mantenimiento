@@ -1,0 +1,4 @@
+// Este archivo permite que Vite copie logo_inicio.jpg a public/
+// La imagen debe existir en: client/public/logo_inicio.jpg
+// Copiala manualmente desde: c:\mantenimiento\logo_inicio.jpg
+//                        a:  c:\mantenimiento\client\public\logo_inicio.jpg

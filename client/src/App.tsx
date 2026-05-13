@@ -1,5 +1,7 @@
+import { useState, useCallback } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
+import SplashScreen from './components/SplashScreen'
 import ActivosList from './pages/ActivosList'
 import ActivoForm from './pages/ActivoForm'
 import ActivoDetail from './pages/ActivoDetail'
@@ -11,8 +13,21 @@ import DashboardPage from './pages/DashboardPage'
 import { ToastProvider } from './components/Toast'
 
 export default function App() {
+  // Mostrar splash solo una vez por sesión de pestaña
+  const [showSplash, setShowSplash] = useState<boolean>(() => {
+    const key = 'cmms_splash_shown'
+    if (sessionStorage.getItem(key)) return false
+    sessionStorage.setItem(key, '1')
+    return true
+  })
+
+  const handleSplashFinish = useCallback(() => {
+    setShowSplash(false)
+  }, [])
+
   return (
     <ToastProvider>
+      {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
