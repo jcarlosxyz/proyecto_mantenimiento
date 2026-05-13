@@ -1,5 +1,5 @@
 /**
- * API REST - Módulo 4: Planes de Mantenimiento Preventivo (PM)
+ * API REST - Modulo 4: Planes de Mantenimiento Preventivo (PM)
  * CRUD completo para la tabla 'planes_mantenimiento' en Supabase
  */
 
@@ -10,7 +10,7 @@ const { enviarCorreoOT } = require('../lib/emailService')
 const { broadcast } = require('../lib/wsServer')
 
 // ============================================================
-// Función para calcular estado del plan
+// Funcion para calcular estado del plan
 // ============================================================
 function calcularEstadoPlan(proxima_fecha) {
   if (!proxima_fecha) return 'Sin fecha'
@@ -44,7 +44,7 @@ router.get('/', async (req, res) => {
     const { data, error } = await query
     if (error) throw error
 
-    // Calcular estado dinámico
+    // Calcular estado dinamico
     const planesConEstado = data.map(plan => ({
       ...plan,
       estado: calcularEstadoPlan(plan.proxima_fecha)
@@ -67,11 +67,11 @@ router.post('/', async (req, res) => {
     const errores = []
     if (!activo_tag) errores.push('El Activo (TAG) es obligatorio')
     if (!tarea) errores.push('La Tarea es obligatoria')
-    if (!frecuencia_dias || isNaN(frecuencia_dias) || frecuencia_dias <= 0) errores.push('La Frecuencia debe ser un número positivo')
+    if (!frecuencia_dias || isNaN(frecuencia_dias) || frecuencia_dias <= 0) errores.push('La Frecuencia debe ser un numero positivo')
 
     if (errores.length > 0) return res.status(400).json({ success: false, errores })
 
-    // Calcular próxima fecha (hoy + frecuencia_dias)
+    // Calcular proxima fecha (hoy + frecuencia_dias)
     const proxima_fecha = new Date()
     proxima_fecha.setDate(proxima_fecha.getDate() + parseInt(frecuencia_dias))
 
@@ -80,15 +80,14 @@ router.post('/', async (req, res) => {
       tarea,
       frecuencia_dias: parseInt(frecuencia_dias),
       tecnico_asignado: tecnico_asignado || null,
-      checklist: checklist || [], // Array of strings
+      checklist: checklist || [],
       ultima_ejecucion: null,
-      proxima_fecha: proxima_fecha.toISOString().split('T')[0] // solo fecha YYYY-MM-DD
+      proxima_fecha: proxima_fecha.toISOString().split('T')[0]
     }
 
     const { data, error } = await supabase.from('planes_mantenimiento').insert(nuevoPlan).select().single()
     if (error) throw error
 
-    // Calcular estado
     data.estado = calcularEstadoPlan(data.proxima_fecha)
     broadcast('plan_actualizado', { accion: 'creado', plan_id: data.id, activo_tag: data.activo_tag, tarea: data.tarea })
     res.status(201).json({ success: true, mensaje: 'Plan creado exitosamente', data })
@@ -116,13 +115,36 @@ router.post('/:id/ejecutar', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Plan no encontrado' })
     }
 
-    // 2. Generar número de OT
-    // Reutilizar la lógica de ordenes.js mediante una llamada HTTP o directamente en DB (simplificado aquí)
+    // 2. Verificar estado del activo
+    // Para PM: se permite ejecutar si el activo esta Operativo o En mantenimiento.
+    // Solo se bloquea si esta Fuera de servicio (OT Correctiva activa).
+    const { data: activo, error: errActivo } = await supabase
+      .from('activos')
+      .select('tag, nombre, estado')
+      .eq('tag', plan.activo_tag)
+      .single()
+
+    if (errActivo || !activo) {
+      return res.status(404).json({
+        success: false,
+        error: 'Activo "' + plan.activo_tag + '" no encontrado en el sistema'
+      })
+    }
+
+    if (activo.estado === 'Fuera de servicio') {
+      return res.status(409).json({
+        success: false,
+        error: 'No se puede ejecutar el plan — el activo "' + activo.tag + '" esta Fuera de servicio',
+        detalle: 'Existe una OT Correctiva activa. Cierrala primero para poder ejecutar un plan preventivo.'
+      })
+    }
+
+    // 3. Generar numero de OT
     const year = new Date().getFullYear()
     const { data: ultOts } = await supabase
       .from('ordenes_trabajo')
       .select('numero_ot')
-      .ilike('numero_ot', `OT-${year}-%`)
+      .ilike('numero_ot', 'OT-' + year + '-%')
       .order('created_at', { ascending: false })
       .limit(1)
       
@@ -131,17 +153,15 @@ router.post('/:id/ejecutar', async (req, res) => {
       const ultimoNumero = ultOts[0].numero_ot.split('-')[2]
       correlativo = parseInt(ultimoNumero, 10) + 1
     }
-    const numero_ot = `OT-${year}-${correlativo.toString().padStart(4, '0')}`
+    const numero_ot = 'OT-' + year + '-' + correlativo.toString().padStart(4, '0')
 
-    // 3. Crear OT
-    // Fecha limite P3 Normal -> 48h
+    // 4. Crear OT preventiva
     const fecha_limite = new Date()
     fecha_limite.setHours(fecha_limite.getHours() + 48)
 
-    // Formatear checklist como descripción
-    let descripcion_problema = `Plan de Mantenimiento: ${plan.tarea}`
+    let descripcion_problema = 'Plan de Mantenimiento Preventivo: ' + plan.tarea
     if (plan.checklist && plan.checklist.length > 0) {
-      descripcion_problema += '\n\nChecklist:\n' + plan.checklist.map(i => `- [ ] ${i}`).join('\n')
+      descripcion_problema += '\n\nChecklist:\n' + plan.checklist.map(i => '- [ ] ' + i).join('\n')
     }
 
     const nuevaOT = {
@@ -150,18 +170,41 @@ router.post('/:id/ejecutar', async (req, res) => {
       tipo_mantenimiento: 'Preventivo',
       prioridad: 'P3 Normal',
       descripcion_problema,
-      tecnico_asignado: plan.tecnico_asignado || 'Por Asignar', // Evita error de restricción NOT NULL en BD
+      tecnico_asignado: plan.tecnico_asignado || 'Por Asignar',
       estado: 'Abierta',
       fecha_limite_inicio: fecha_limite.toISOString()
     }
 
-    const { data: otData, error: errOT } = await supabase.from('ordenes_trabajo').insert(nuevaOT).select().single()
-    if (errOT) throw errOT
+    console.log('[planes.js] Creando OT:', numero_ot, 'para activo:', plan.activo_tag)
 
-    // 4. Actualizar estado del activo a En mantenimiento
-    await supabase.from('activos').update({ estado: 'En mantenimiento' }).eq('tag', plan.activo_tag)
+    const { data: otData, error: errOT } = await supabase
+      .from('ordenes_trabajo')
+      .insert(nuevaOT)
+      .select()
+      .single()
 
-    // 5. Actualizar el plan (ultima_ejecucion = hoy, proxima_fecha = hoy + frecuencia_dias)
+    if (errOT) {
+      console.error('[planes.js] Error al insertar OT:', errOT.message, '| code:', errOT.code, '| detail:', errOT.details)
+      return res.status(500).json({
+        success: false,
+        error: 'No se pudo crear la OT: ' + errOT.message,
+        detalle: errOT.details || errOT.hint || ''
+      })
+    }
+
+    console.log('[planes.js] OT creada:', otData.numero_ot)
+
+    // 5. Actualizar estado del activo
+    const { error: errEstadoActivo } = await supabase
+      .from('activos')
+      .update({ estado: 'En mantenimiento' })
+      .eq('tag', plan.activo_tag)
+
+    if (errEstadoActivo) {
+      console.error('[planes.js] No se pudo actualizar estado del activo:', errEstadoActivo.message)
+    }
+
+    // 6. Actualizar el plan (ultima_ejecucion y proxima_fecha)
     const hoy = new Date()
     const nuevaProxFecha = new Date()
     nuevaProxFecha.setDate(hoy.getDate() + plan.frecuencia_dias)
@@ -177,44 +220,49 @@ router.post('/:id/ejecutar', async (req, res) => {
       .select()
       .single()
 
-    if (errUpdatePlan) throw errUpdatePlan
+    if (errUpdatePlan) {
+      console.error('[planes.js] Error al actualizar plan:', errUpdatePlan.message)
+    }
 
     broadcast('plan_actualizado', { accion: 'ejecutado', plan_id: plan.id, activo_tag: plan.activo_tag, numero_ot: otData.numero_ot })
+    broadcast('ot_creada', { numero_ot: otData.numero_ot, activo_tag: otData.activo_tag, tipo: 'Preventivo', tecnico: otData.tecnico_asignado })
+
     res.json({
       success: true,
-      mensaje: 'Plan ejecutado: OT Preventiva generada exitosamente',
+      mensaje: 'OT Preventiva ' + otData.numero_ot + ' generada exitosamente para ' + plan.activo_tag,
       orden_trabajo: otData,
-      plan: { ...planActualizado, estado: calcularEstadoPlan(planActualizado.proxima_fecha) }
+      plan: planActualizado
+        ? { ...planActualizado, estado: calcularEstadoPlan(planActualizado.proxima_fecha) }
+        : null
     })
 
-    // ── Enviar correo al técnico (no bloqueante) ──────────────────────────────
+    // Enviar correo al tecnico (no bloqueante)
     if (otData && otData.tecnico_asignado && otData.tecnico_asignado !== 'Por Asignar') {
       setImmediate(async () => {
         try {
           const { data: tecnico } = await supabase
             .from('tecnicos')
             .select('nombre, email')
-            .ilike('nombre', `%${otData.tecnico_asignado}%`)
+            .ilike('nombre', '%' + otData.tecnico_asignado + '%')
             .limit(1)
             .single()
 
           const emailResult = await enviarCorreoOT(
             otData,
-            tecnico?.email || null,
-            tecnico?.nombre || otData.tecnico_asignado
+            tecnico ? tecnico.email : null,
+            tecnico ? tecnico.nombre : otData.tecnico_asignado
           )
-          if (emailResult?.skipped) {
-            console.log(`[planes.js] ⚠️  Correo no enviado: ${emailResult.razon}`)
+          if (emailResult && emailResult.skipped) {
+            console.log('[planes.js] Correo no enviado:', emailResult.razon)
           }
         } catch (emailErr) {
-          console.error('[planes.js] ❌ Error al enviar correo:', emailErr.message)
+          console.error('[planes.js] Error al enviar correo:', emailErr.message)
         }
       })
     }
-    // ─────────────────────────────────────────────────────────────
 
   } catch (error) {
-    console.error('Error al ejecutar plan:', error.message)
+    console.error('[planes.js] Error al ejecutar plan:', error.message)
     res.status(500).json({ success: false, error: 'Error al ejecutar plan', detalle: error.message })
   }
 })
@@ -268,15 +316,13 @@ router.put('/:id', async (req, res) => {
     const errores = []
     if (!activo_tag) errores.push('El Activo (TAG) es obligatorio')
     if (!tarea) errores.push('La Tarea es obligatoria')
-    if (!frecuencia_dias || isNaN(frecuencia_dias) || frecuencia_dias <= 0) errores.push('La Frecuencia debe ser un número positivo')
+    if (!frecuencia_dias || isNaN(frecuencia_dias) || frecuencia_dias <= 0) errores.push('La Frecuencia debe ser un numero positivo')
 
     if (errores.length > 0) return res.status(400).json({ success: false, errores })
 
-    // Obtener plan actual para no sobreescribir ultima_ejecucion
     const { data: planActual, error: errPlan } = await supabase.from('planes_mantenimiento').select('*').eq('id', id).single()
     if (errPlan || !planActual) return res.status(404).json({ success: false, error: 'Plan no encontrado' })
 
-    // Si la frecuencia cambia, se podría recalcular la próxima fecha. Para simplificar, la recalculamos desde hoy o mantenemos la lógica base.
     let proxima_fecha = planActual.proxima_fecha
     if (planActual.frecuencia_dias !== parseInt(frecuencia_dias)) {
       const fechaBase = planActual.ultima_ejecucion ? new Date(planActual.ultima_ejecucion) : new Date()
