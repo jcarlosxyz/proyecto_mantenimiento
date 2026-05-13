@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Material } from '../api/materiales'
 import { listarOrdenesCompra, recibirOrdenCompra, OrdenCompra } from '../api/ordenes_compra'
 import { X, ClipboardList, Clock, Truck, Download, Package, CheckCircle2, Calendar, Hash, ChevronDown, ChevronUp, BoxSelect } from 'lucide-react'
 import { useToast } from './Toast'
+import { useInventarioWS } from '../hooks/useInventarioWS'
 
 interface OrdenesCompraActivasModalProps {
   material: Material
@@ -16,6 +17,12 @@ export default function OrdenesCompraActivasModal({ material, onClose }: Ordenes
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [recibiendo, setRecibiendo] = useState<string | null>(null)
+
+  useInventarioWS(useCallback((evento: any) => {
+    if (evento.tipo === 'nueva_orden_compra' && evento.datos.material_id === material.id) {
+      setOrdenes(prev => [evento.datos, ...prev]);
+    }
+  }, [material.id]))
 
   useEffect(() => {
     const fetchOrdenes = async () => {

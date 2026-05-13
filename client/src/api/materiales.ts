@@ -9,6 +9,7 @@ export interface Material {
   stock: number
   stock_minimo: number
   stock_maximo: number | null
+  tiene_orden_activa?: boolean
   created_at: string
   updated_at: string
 }

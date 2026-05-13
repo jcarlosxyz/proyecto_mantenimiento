@@ -16,14 +16,7 @@ const WS_URL = `ws://${window.location.hostname}:3000/ws`
 export interface EventoInventario {
   tipo: string
   ts: string
-  datos: {
-    material_id: string
-    nombre: string
-    stock_nuevo: number
-    cantidad_usada: number
-    orden_id: string
-    accion: 'consumo' | 'devolucion'
-  }
+  datos: any
 }
 
 /**
@@ -60,8 +53,8 @@ export function useInventarioWS(
     ws.onmessage = (event) => {
       try {
         const mensaje: EventoInventario = JSON.parse(event.data)
-        // Solo procesar eventos de inventario
-        if (mensaje.tipo === 'inventario_actualizado') {
+        // Procesar eventos de inventario y órdenes de compra
+        if (mensaje.tipo === 'inventario_actualizado' || mensaje.tipo === 'nueva_orden_compra') {
           callbackRef.current(mensaje)
         }
       } catch {

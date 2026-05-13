@@ -5,7 +5,8 @@
 
 const express = require('express')
 const router = express.Router()
-const { supabase } = require('../supabaseClient')
+const { supabase, supabaseAdmin } = require('../supabaseClient')
+const db = supabaseAdmin || supabase
 const { broadcast } = require('../lib/wsServer')
 
 // ============================================================
@@ -19,7 +20,7 @@ router.get('/', async (req, res) => {
     const limiteNum = parseInt(limite)
     const offset = (paginaNum - 1) * limiteNum
 
-    let query = supabase.from('materiales').select('*', { count: 'exact' })
+    let query = db.from('materiales').select('*', { count: 'exact' })
 
     if (buscar) {
       query = query.ilike('nombre', `%${buscar}%`)
@@ -30,6 +31,27 @@ router.get('/', async (req, res) => {
     const { data, error, count } = await query
 
     if (error) throw error
+
+    // Obtener información de órdenes de compra activas para estos materiales
+    if (data && data.length > 0) {
+      const materialIds = data.map(m => m.id)
+      const { data: ordenesActivas, error: errOrdenes } = await db
+        .from('ordenes_compra')
+        .select('material_id')
+        .in('material_id', materialIds)
+        .neq('estado', 'Recibido')
+      
+      // Añadir la bandera si la tabla existe (si no existe omitimos el error silenciosamente)
+      if (ordenesActivas) {
+        const activasSet = new Set(ordenesActivas.map(o => o.material_id))
+        data.forEach(m => {
+          m.tiene_orden_activa = activasSet.has(m.id)
+        })
+      } else if (errOrdenes && errOrdenes.code !== '42P01') {
+         // Log the error unless it's just "table doesn't exist yet"
+         console.error('[materiales.js] Error al buscar órdenes activas:', errOrdenes)
+      }
+    }
 
     res.json({
       success: true,

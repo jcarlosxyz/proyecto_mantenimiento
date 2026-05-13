@@ -26,23 +26,34 @@ export default function MaterialesList() {
   const [wsNotif, setWsNotif] = useState<{ nombre: string; stock: number; accion: string } | null>(null)
 
   useInventarioWS(useCallback((evento: EventoInventario) => {
-    const { material_id, nombre, stock_nuevo, accion } = evento.datos
+    if (evento.tipo === 'inventario_actualizado') {
+      const { material_id, nombre, stock_nuevo, accion } = evento.datos
 
-    // Actualizar solo el material afectado en el array local
-    setMateriales(prev =>
-      prev.map(m =>
-        m.id === material_id ? { ...m, stock: stock_nuevo } : m
+      // Actualizar solo el material afectado en el array local
+      setMateriales(prev =>
+        prev.map(m =>
+          m.id === material_id ? { ...m, stock: stock_nuevo } : m
+        )
       )
-    )
 
-    // Mostrar notificación flotante
-    let accionLabel = ''
-    if (accion === 'consumo') accionLabel = '↓ Consumo registrado'
-    else if (accion === 'entrada') accionLabel = '📦 Entrada por Compra'
-    else accionLabel = '↑ Stock devuelto'
-    
-    setWsNotif({ nombre, stock: stock_nuevo, accion: accionLabel })
-    setTimeout(() => setWsNotif(null), 4000)
+      // Mostrar notificación flotante
+      let accionLabel = ''
+      if (accion === 'consumo') accionLabel = '↓ Consumo registrado'
+      else if (accion === 'entrada') accionLabel = '📦 Entrada por Compra'
+      else accionLabel = '↑ Stock devuelto'
+      
+      setWsNotif({ nombre, stock: stock_nuevo, accion: accionLabel })
+      setTimeout(() => setWsNotif(null), 4000)
+    } else if (evento.tipo === 'nueva_orden_compra') {
+      const orden = evento.datos;
+      setMateriales(prev => 
+        prev.map(m => 
+          m.id === orden.material_id ? { ...m, tiene_orden_activa: true } : m
+        )
+      );
+      setWsNotif({ nombre: orden.materiales?.nombre || 'Material', stock: orden.cantidad, accion: '🛒 Nueva Orden Generada' });
+      setTimeout(() => setWsNotif(null), 4000)
+    }
   }, []))
 
   const fetchMateriales = useCallback(async () => {
@@ -226,8 +237,33 @@ export default function MaterialesList() {
                       : 'var(--accent-emerald)'
 
                     return (
-                      <tr key={m.id}>
-                        <td style={{ fontWeight: 600 }}>{m.nombre}</td>
+                      <tr key={m.id} style={m.tiene_orden_activa ? { background: 'rgba(245,158,11,0.04)' } : {}}>
+                        <td style={{ fontWeight: 600 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {m.nombre}
+                            {m.tiene_orden_activa && (
+                              <span 
+                                title="Tiene orden(es) de compra en tránsito"
+                                style={{
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  background: 'var(--accent-amber-glow)',
+                                  color: 'var(--accent-amber)',
+                                  padding: '2px 8px',
+                                  borderRadius: '99px',
+                                  border: '1px solid rgba(245,158,11,0.3)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  letterSpacing: '0.5px',
+                                  textTransform: 'uppercase'
+                                }}
+                              >
+                                🛒 En Compra
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td><span className="badge badge-area">{m.unidad}</span></td>
                         <td style={{ fontWeight: 500 }}>${m.costo_unitario.toFixed(2)}</td>
 

@@ -40,9 +40,9 @@ router.get('/', async (req, res) => {
     const p1Count       = ordenes.filter(o => o.prioridad === 'P1 Emergencia').length
 
     // MTTR: promedio de tiempo_reparacion_horas de OTs cerradas
-    const otsConTiempo = ordenes.filter(o => o.estado === 'Cerrada' && o.tiempo_reparacion_horas)
+    const otsConTiempo = ordenes.filter(o => o.estado === 'Cerrada' && typeof o.tiempo_reparacion_horas === 'number' && o.tiempo_reparacion_horas > 0)
     const mttr = otsConTiempo.length > 0
-      ? (otsConTiempo.reduce((acc, o) => acc + (o.tiempo_reparacion_horas || 0), 0) / otsConTiempo.length).toFixed(1)
+      ? (otsConTiempo.reduce((acc, o) => acc + o.tiempo_reparacion_horas, 0) / otsConTiempo.length).toFixed(1)
       : 0
 
     // % Preventivo vs total
@@ -115,18 +115,13 @@ router.get('/', async (req, res) => {
     const proximos3d     = planesActivos.filter(p => p.estado === 'Proximo en <3 dias').length
     const alDia          = planesActivos.filter(p => p.estado === 'Al dia').length
 
-    // Cumplimiento mensual PM
-    const mesActual = hoy.getMonth(), anioActual = hoy.getFullYear()
-    let ejecutadosPM = 0, pendientesPM = 0
-    planesActivos.forEach(p => {
-      const fU = p.ultima_ejecucion ? new Date(p.ultima_ejecucion) : null
-      const fP = new Date(p.proxima_fecha)
-      const ejecutadoMes = fU && fU.getMonth() === mesActual && fU.getFullYear() === anioActual
-      const venceMes = fP.getMonth() === mesActual && fP.getFullYear() === anioActual
-      if (ejecutadoMes) ejecutadosPM++
-      else if (venceMes || p.estado === 'Vencido') pendientesPM++
-    })
-    const programadosPM = ejecutadosPM + pendientesPM
+    // ── Cumplimiento Mensual PM (ESTRICTO) ──
+    // Se calcula sobre las Órdenes de Trabajo Preventivas del mes actual: 
+    // (OTs Preventivas Cerradas / OTs Preventivas Generadas) * 100
+    const preventivasMes = otsMes.filter(o => o.tipo_mantenimiento === 'Preventivo')
+    const preventivasMesCerradas = preventivasMes.filter(o => o.estado === 'Cerrada').length
+    const programadosPM = preventivasMes.length
+    const ejecutadosPM = preventivasMesCerradas
     const cumplimientoPM = programadosPM === 0 ? 100 : Math.round((ejecutadosPM / programadosPM) * 100)
 
     // ── 4. Materiales / Inventario ───────────────────────────────
@@ -136,9 +131,9 @@ router.get('/', async (req, res) => {
     if (errMat) throw errMat
 
     const totalMateriales  = materiales.length
-    const stockBajoMinimo  = materiales.filter(m => m.stock <= m.stock_minimo).length
-    const sinStock         = materiales.filter(m => m.stock === 0).length
-    const valorInventario  = materiales.reduce((acc, m) => acc + m.stock * m.costo_unitario, 0)
+    const stockBajoMinimo  = materiales.filter(m => Number(m.stock) <= Number(m.stock_minimo)).length
+    const sinStock         = materiales.filter(m => Number(m.stock) === 0).length
+    const valorInventario  = materiales.reduce((acc, m) => acc + (Number(m.stock) || 0) * (Number(m.costo_unitario) || 0), 0)
 
     // ── 5. Técnicos ──────────────────────────────────────────────
     const { data: tecnicos, error: errTec } = await supabase

@@ -54,9 +54,12 @@ router.post('/', async (req, res) => {
       estado: 'Pendiente'
     }
 
-    const { data, error } = await db.from('ordenes_compra').insert(nuevaOrden).select().single()
+    const { data, error } = await db.from('ordenes_compra').insert(nuevaOrden).select('*, materiales(nombre, unidad)').single()
 
     if (error) throw error
+
+    // Emitir evento WebSocket para actualizar pantallas
+    broadcast('nueva_orden_compra', data)
 
     res.status(201).json({ success: true, mensaje: 'Orden de compra creada', data })
   } catch (error) {
