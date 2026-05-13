@@ -47,16 +47,6 @@ export default function OrdenCompraModal({ material, onClose }: OrdenCompraModal
 
       showSuccess(`Orden de compra generada para ${material.nombre}`)
       
-      const mensaje = `*NUEVA ORDEN DE COMPRA* 🛒\n\n` +
-        `*Material:* ${material.nombre}\n` +
-        `*Cantidad Solicitada:* ${cantidad} ${material.unidad}\n` +
-        `*Proveedor:* ${proveedor}\n` +
-        `*Tiempo de Entrega Esperado:* ${tiempoEntrega}\n\n` +
-        `*Nota:* Consumo histórico registrado: ${historico} ${material.unidad}`
-
-      const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`
-      window.open(url, '_blank')
-      
       onClose()
     } catch (err: any) {
       if (err.message.includes('Falta crear la tabla')) {
