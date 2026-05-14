@@ -17,6 +17,7 @@ const PlanesPage: React.FC = () => {
   const [pestana, setPestana] = useState<'activos' | 'cerrados'>('activos');
   const [showModal, setShowModal] = useState(false);
   const [planToEdit, setPlanToEdit] = useState<PlanMantenimiento | null>(null);
+  const [errorModal, setErrorModal] = useState<{ show: boolean, message: string, detalle: string } | null>(null);
   const { showSuccess, showError } = useToast();
 
   const [tecnicoMap, setTecnicoMap] = useState<Record<string, Tecnico>>({});
@@ -54,7 +55,13 @@ const PlanesPage: React.FC = () => {
       await planesAPI.ejecutar(id);
       showSuccess(`OT Preventiva generada para ${activo}`);
       fetchPlanes();
-    } catch (err: any) { showError(err.message || 'Error al ejecutar plan'); }
+    } catch (err: any) {
+      if (err.detalle) {
+        setErrorModal({ show: true, message: err.message, detalle: err.detalle });
+      } else {
+        showError(err.message || 'Error al ejecutar plan');
+      }
+    }
   };
 
   const handleCerrar = async (id: string) => {
@@ -400,6 +407,26 @@ const PlanesPage: React.FC = () => {
             showSuccess(planToEdit ? 'Plan actualizado' : 'Plan creado correctamente');
           }}
         />
+      )}
+
+      {errorModal && errorModal.show && (
+        <div className="modal-overlay" onClick={() => setErrorModal(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '10px 0' }}>
+              <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', marginBottom: '16px' }}>
+                <AlertTriangle size={30} />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', marginTop: 0 }}>No se puede generar la OT</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '12px', marginTop: 0 }}>{errorModal.message}</p>
+              <div style={{ background: 'var(--bg-input)', border: '1px solid rgba(239,68,68,0.2)', padding: '12px 16px', borderRadius: 'var(--radius-md)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '24px' }}>
+                {errorModal.detalle}
+              </div>
+              <button className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setErrorModal(null)}>
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -131,11 +131,19 @@ router.post('/:id/ejecutar', async (req, res) => {
       })
     }
 
-    if (activo.estado === 'Fuera de servicio') {
+    // 2b. Verificar si el activo ya tiene una OT abierta (preventiva o correctiva)
+    const { data: otsAbiertas, error: errOts } = await supabase
+      .from('ordenes_trabajo')
+      .select('numero_ot, estado')
+      .eq('activo_tag', plan.activo_tag)
+      .in('estado', ['Abierta', 'En proceso'])
+      .limit(1)
+
+    if (otsAbiertas && otsAbiertas.length > 0) {
       return res.status(409).json({
         success: false,
-        error: 'No se puede ejecutar el plan — el activo "' + activo.tag + '" esta Fuera de servicio',
-        detalle: 'Existe una OT Correctiva activa. Cierrala primero para poder ejecutar un plan preventivo.'
+        error: `El activo ${plan.activo_tag} ya se encuentra en una OT abierta.`,
+        detalle: `No se puede generar la OT porque el activo se encuentra en la orden ${otsAbiertas[0].numero_ot} en estado "${otsAbiertas[0].estado}". Por favor, cierre la orden actual antes de generar una nueva.`
       })
     }
 

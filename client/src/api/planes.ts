@@ -58,7 +58,11 @@ export const planesAPI = {
       method: 'POST'
     })
     const json = await res.json()
-    if (!json.success) throw new Error(json.error)
+    if (!json.success) {
+      const err = new Error(json.error) as any;
+      if (json.detalle) err.detalle = json.detalle;
+      throw err;
+    }
     return json
   },
 
