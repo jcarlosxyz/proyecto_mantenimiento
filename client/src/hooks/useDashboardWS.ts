@@ -23,6 +23,7 @@ const EVENTOS_DASHBOARD = new Set([
   'catalogo_actualizado',
   'plan_actualizado',
   'tecnico_actualizado',
+  'nueva_orden_compra',
 ])
 
 export interface EventoDashboard {

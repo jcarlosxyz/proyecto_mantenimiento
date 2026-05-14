@@ -135,6 +135,16 @@ router.get('/', async (req, res) => {
     const sinStock         = materiales.filter(m => Number(m.stock) === 0).length
     const valorInventario  = materiales.reduce((acc, m) => acc + (Number(m.stock) || 0) * (Number(m.costo_unitario) || 0), 0)
 
+    const materialesBajoStock = materiales
+      .filter(m => Number(m.stock) <= Number(m.stock_minimo))
+      .sort((a, b) => Number(a.stock) - Number(b.stock))
+      .slice(0, 5)
+
+    const materialesValorados = [...materiales]
+      .map(m => ({ ...m, valor_total: (Number(m.stock) || 0) * (Number(m.costo_unitario) || 0) }))
+      .sort((a, b) => b.valor_total - a.valor_total)
+      .slice(0, 5)
+
     // ── 5. Técnicos ──────────────────────────────────────────────
     const { data: tecnicos, error: errTec } = await supabase
       .from('tecnicos')
@@ -184,6 +194,8 @@ router.get('/', async (req, res) => {
       },
       tablas: {
         otsPendientes: proximasOTs,
+        materialesBajoStock,
+        materialesValorados,
       },
     })
   } catch (err) {

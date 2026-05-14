@@ -33,6 +33,12 @@ export interface DashboardData {
       id: string; estado: string; tipo_mantenimiento: string
       tecnico_asignado: string; prioridad: string; created_at: string; activo_tag: string
     }[]
+    materialesBajoStock: {
+      id: string; nombre: string; stock: number; stock_minimo: number; stock_maximo: number; costo_unitario: number
+    }[]
+    materialesValorados: {
+      id: string; nombre: string; stock: number; stock_minimo: number; stock_maximo: number; costo_unitario: number; valor_total: number
+    }[]
   }
 }
 

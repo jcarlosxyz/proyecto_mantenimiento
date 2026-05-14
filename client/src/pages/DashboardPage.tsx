@@ -4,7 +4,7 @@ import { useDashboardWS, EventoDashboard } from '../hooks/useDashboardWS'
 import {
   Activity, AlertTriangle, CheckCircle2, Clock, Package,
   Shield, Wrench, Users, Zap, RefreshCw, BarChart2,
-  Calendar, TrendingUp, ArrowUp, ArrowDown, Minus
+  Calendar, TrendingUp, ArrowUp, ArrowDown, Minus, DollarSign
 } from 'lucide-react'
 
 /* ── helpers ── */
@@ -100,6 +100,7 @@ export default function DashboardPage() {
       catalogo_actualizado:   '📋 Catálogo de materiales cambió',
       plan_actualizado:       '🗓️ Plan PM actualizado',
       tecnico_actualizado:    '👷 Técnicos actualizados',
+      nueva_orden_compra:     '🛒 Nueva orden de compra',
     }
     setWsNotif(labels[evento.tipo] || `⚡ ${evento.tipo}`)
     fetchData()
@@ -271,30 +272,146 @@ export default function DashboardPage() {
           <SectionTitle icon={<Wrench size={15}/>} title="OTs Pendientes" badge={`${tablas.otsPendientes.length}`} />
           {tablas.otsPendientes.length === 0
             ? <div style={{ textAlign:'center', padding:'28px', fontSize:'13px', color:'var(--text-muted)' }}>🎉 Sin OTs pendientes</div>
-            : <div style={{ display:'flex', flexDirection:'column', gap:'7px' }}>
-                {tablas.otsPendientes.map(ot => (
-                  <div key={ot.id} style={{ background:'var(--bg-input)', border:'1px solid var(--border-color)', borderRadius:'var(--radius-sm)', padding:'10px 13px', display:'flex', alignItems:'center', gap:'10px' }}>
-                    <div style={{ width:7,height:7,borderRadius:'50%',background:pColor[ot.prioridad]||'#64748b',flexShrink:0,boxShadow:`0 0 6px ${pColor[ot.prioridad]||'#64748b'}` }}/>
-                    <div style={{ flex:1,minWidth:0 }}>
-                      <div style={{ fontSize:'13px',fontWeight:700,color:'var(--text-primary)' }}>{ot.activo_tag}</div>
-                      <div style={{ fontSize:'11px',color:'var(--text-muted)',marginTop:'1px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis' }}>
-                        {ot.tecnico_asignado||'Sin asignar'} · {ot.tipo_mantenimiento}
+            : <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+                {tablas.otsPendientes.map(ot => {
+                  const isPreventivo = ot.tipo_mantenimiento === 'Preventivo';
+                  const baseColor = pColor[ot.prioridad] || '#64748b';
+                  
+                  return (
+                    <div key={ot.id} style={{
+                      position: 'relative',
+                      background: isPreventivo 
+                        ? 'linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(52,211,153,0.02) 100%)' 
+                        : 'var(--bg-input)',
+                      border: isPreventivo 
+                        ? '1px solid rgba(16,185,129,0.4)' 
+                        : '1px solid var(--border-color)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      overflow: 'hidden',
+                      boxShadow: isPreventivo ? '0 4px 20px rgba(16,185,129,0.1)' : 'none',
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                    }}>
+                      {/* Borde izquierdo brillante para preventivo */}
+                      {isPreventivo && (
+                        <div style={{
+                          position: 'absolute',
+                          left: 0, top: 0, bottom: 0, width: '4px',
+                          background: 'linear-gradient(180deg, #10b981, #34d399)',
+                          boxShadow: '0 0 10px #10b981'
+                        }} />
+                      )}
+
+                      <div style={{ width:10,height:10,borderRadius:'50%',background:baseColor,flexShrink:0,boxShadow:`0 0 8px ${baseColor}` }}/>
+                      
+                      <div style={{ flex:1,minWidth:0 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                          <span style={{ fontSize:'14px',fontWeight:800,color:'var(--text-primary)' }}>{ot.activo_tag}</span>
+                          {isPreventivo && (
+                            <span style={{
+                              fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px',
+                              background: 'rgba(16,185,129,0.2)', color: '#34d399',
+                              padding: '2px 8px', borderRadius: '100px', border: '1px solid rgba(16,185,129,0.3)',
+                              animation: 'pulse 2s infinite'
+                            }}>
+                              ✨ Preventivo
+                            </span>
+                          )}
+                          {ot.tipo_mantenimiento === 'Correctivo' && (
+                            <span style={{
+                              fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px',
+                              background: 'rgba(239,68,68,0.15)', color: '#ef4444',
+                              padding: '2px 8px', borderRadius: '100px', border: '1px solid rgba(239,68,68,0.2)'
+                            }}>
+                              🛠️ Correctivo
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize:'11px',color:'var(--text-muted)',marginTop:'4px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>{ot.tecnico_asignado || 'Sin asignar'}</span>
+                          {!isPreventivo && ot.tipo_mantenimiento !== 'Correctivo' && ` · ${ot.tipo_mantenimiento}`}
+                        </div>
+                      </div>
+                      
+                      <div style={{ display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'5px',flexShrink:0 }}>
+                        <span style={{ fontSize:'10px',fontWeight:800,padding:'3px 9px',borderRadius:'99px',background:`${baseColor}1a`,color:baseColor,border:`1px solid ${baseColor}40` }}>
+                          {(ot.prioridad||'').replace(/P\d /,'')}
+                        </span>
+                        <span style={{ fontSize:'10px',fontWeight:700,color:ot.estado==='Abierta'?'#3b82f6':'#f59e0b' }}>{ot.estado}</span>
                       </div>
                     </div>
-                    <div style={{ display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'3px',flexShrink:0 }}>
-                      <span style={{ fontSize:'10px',fontWeight:700,padding:'2px 7px',borderRadius:'99px',background:`${pColor[ot.prioridad]||'#64748b'}1a`,color:pColor[ot.prioridad]||'#64748b',border:`1px solid ${pColor[ot.prioridad]||'#64748b'}35` }}>
-                        {(ot.prioridad||'').replace(/P\d /,'')}
-                      </span>
-                      <span style={{ fontSize:'10px',fontWeight:600,color:ot.estado==='Abierta'?'#3b82f6':'#f59e0b' }}>{ot.estado}</span>
+                  )
+                })}
+              </div>
+          }
+        </div>
+      </div>
+
+      {/* ── FILA 4 — ALERTAS DE MATERIALES Y VALOR ────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        {/* Materiales Bajo Mínimo */}
+        <div style={{ background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:'var(--radius-lg)', padding:'20px' }}>
+          <SectionTitle icon={<AlertTriangle size={15}/>} title="Materiales Críticos (Bajo Stock)" badge={`${tablas.materialesBajoStock.length}`} />
+          {tablas.materialesBajoStock.length === 0
+            ? <div style={{ textAlign:'center', padding:'28px', fontSize:'13px', color:'var(--text-muted)' }}>✅ Inventario saludable</div>
+            : <div style={{ display:'flex', flexDirection:'column', gap:'7px' }}>
+                {tablas.materialesBajoStock.map(m => (
+                  <div key={m.id} style={{ background:'var(--bg-input)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:'var(--radius-sm)', padding:'10px 13px', display:'flex', alignItems:'center', gap:'10px' }}>
+                    <div style={{ width:34,height:34,borderRadius:'8px',background:'rgba(245,158,11,0.1)',display:'flex',alignItems:'center',justifyContent:'center',color:'#f59e0b',flexShrink:0 }}>
+                      <Package size={16}/>
+                    </div>
+                    <div style={{ flex:1,minWidth:0 }}>
+                      <div style={{ fontSize:'13px',fontWeight:700,color:'var(--text-primary)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis' }}>{m.nombre}</div>
+                      <div style={{ fontSize:'11px',color:'var(--text-muted)',marginTop:'2px' }}>
+                        Costo uni: {money(m.costo_unitario)}
+                      </div>
+                    </div>
+                    <div style={{ textAlign:'right',flexShrink:0 }}>
+                      <div style={{ fontSize:'14px',fontWeight:800,color:m.stock === 0 ? '#ef4444' : '#f59e0b' }}>{m.stock}</div>
+                      <div style={{ fontSize:'10px',color:'var(--text-muted)' }}>Mín: {m.stock_minimo}</div>
                     </div>
                   </div>
                 ))}
               </div>
           }
         </div>
+
+        {/* Top Valor Inventario */}
+        <div style={{ background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:'var(--radius-lg)', padding:'20px' }}>
+          <SectionTitle icon={<DollarSign size={15}/>} title="Top Inversión en Inventario" badge={`Top ${tablas.materialesValorados.length}`} />
+          {tablas.materialesValorados.length === 0
+            ? <div style={{ textAlign:'center', padding:'28px', fontSize:'13px', color:'var(--text-muted)' }}>Sin materiales valorados</div>
+            : <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+                {tablas.materialesValorados.map((m, idx) => {
+                   const maxVal = Math.max(...tablas.materialesValorados.map(x=>x.valor_total), 1)
+                   const pct = Math.min(100, Math.max(3, Math.round((m.valor_total / maxVal) * 100)))
+                   return (
+                     <div key={m.id} style={{ marginBottom:'4px' }}>
+                       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'6px' }}>
+                         <div style={{ display:'flex', alignItems:'center', gap:'8px', minWidth:0 }}>
+                           <span style={{ fontSize:'10px', fontWeight:800, color:'var(--text-muted)', background:'var(--bg-input)', border:'1px solid var(--border-color)', padding:'2px 6px', borderRadius:'4px' }}>#{idx+1}</span>
+                           <span style={{ fontSize:'12px', fontWeight:600, color:'var(--text-secondary)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:'160px' }}>{m.nombre}</span>
+                         </div>
+                         <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
+                           <span style={{ fontSize:'13px', fontWeight:800, color:'var(--accent-blue)' }}>{money(m.valor_total)}</span>
+                           <span style={{ fontSize:'10px', color:'var(--text-muted)' }}>{m.stock} unidades</span>
+                         </div>
+                       </div>
+                       <div style={{ height:'5px', background:'var(--bg-input)', borderRadius:'99px', overflow:'hidden' }}>
+                         <div style={{ height:'100%', width:`${pct}%`, background:'linear-gradient(90deg, #3b82f6, #60a5fa)', borderRadius:'99px', transition:'width 600ms ease' }}/>
+                       </div>
+                     </div>
+                   )
+                })}
+              </div>
+          }
+        </div>
       </div>
 
-      {/* ── FILA 4 — STATUS DETALLADO ─────────────────────── */}
+      {/* ── FILA 5 — STATUS DETALLADO ─────────────────────── */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))', gap:'12px' }}>
         {[
           { label:'Activos Operativos',   value:act.operativos,      total:act.total, color:'#10b981', icon:<CheckCircle2 size={15}/> },
