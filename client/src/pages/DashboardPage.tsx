@@ -6,6 +6,7 @@ import {
   Shield, Wrench, Users, Zap, RefreshCw, BarChart2,
   Calendar, TrendingUp, ArrowUp, ArrowDown, Minus, DollarSign
 } from 'lucide-react'
+import ballPlayingGif from '../../../Ball playing.gif'
 
 /* ── helpers ── */
 const fmt = (n: number) => n.toLocaleString('es-MX')
@@ -140,16 +141,21 @@ export default function DashboardPage() {
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>KPIs en tiempo real · todos los módulos</p>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {wsNotif && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#10b981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '99px', padding: '5px 11px' }}>
-              <Zap size={12} /> {wsNotif}
-            </div>
-          )}
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '6px 11px' }}>
-            {lastUpdate.toLocaleTimeString('es-ES')}
-          </span>
-          <button className="btn btn-secondary btn-sm" onClick={fetchData}><RefreshCw size={13} /></button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+          {/* GIF animado (tamaño aumentado a 168x168) */}
+          <img src={ballPlayingGif} alt="Ball playing animation" style={{ width: 168, height: 168, objectFit: 'contain' }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {wsNotif && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#10b981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '99px', padding: '5px 11px' }}>
+                <Zap size={12} /> {wsNotif}
+              </div>
+            )}
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '6px 11px' }}>
+              {lastUpdate.toLocaleTimeString('es-ES')}
+            </span>
+            <button className="btn btn-secondary btn-sm" onClick={fetchData}><RefreshCw size={13} /></button>
+          </div>
         </div>
       </div>
 
