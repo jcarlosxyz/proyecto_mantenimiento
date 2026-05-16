@@ -213,12 +213,24 @@ export default function ActivoForm() {
               {/* Estado (solo en editar) */}
               {isEdit && (
                 <div className="form-group">
-                  <label className="form-label" htmlFor="estado">Estado</label>
-                  <select id="estado" name="estado" className="form-select" value={form.estado || ''} onChange={handleChange}>
+                  <label className="form-label" htmlFor="estado">
+                    Estado <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 }}>(Solo lectura)</span>
+                  </label>
+                  <select 
+                    id="estado" 
+                    name="estado" 
+                    className="form-select" 
+                    value={form.estado || ''} 
+                    disabled
+                    style={{ backgroundColor: 'var(--bg-body)', cursor: 'not-allowed', opacity: 0.8 }}
+                  >
                     <option value="Operativo">Operativo</option>
                     <option value="En mantenimiento">En mantenimiento</option>
                     <option value="Fuera de servicio">Fuera de servicio</option>
                   </select>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                    * El estado se actualiza de manera automática mediante las Órdenes de Trabajo.
+                  </div>
                 </div>
               )}
 

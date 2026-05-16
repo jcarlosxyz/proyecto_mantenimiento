@@ -47,8 +47,6 @@ export default function ActivoDetail() {
   const [loading, setLoading] = useState(true)
   const [deleteModal, setDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [estadoModal, setEstadoModal] = useState(false)
-  const [nuevoEstado, setNuevoEstado] = useState('')
 
   // Tabs y Historial
   const [activeTab, setActiveTab] = useState<'detalles' | 'historial'>('detalles')
@@ -95,17 +93,7 @@ export default function ActivoDetail() {
     }
   }
 
-  const handleCambiarEstado = async () => {
-    if (!id || !nuevoEstado) return
-    try {
-      const res = await cambiarEstado(id, nuevoEstado)
-      setActivo(res.data)
-      showSuccess(`Estado cambiado a "${nuevoEstado}"`)
-      setEstadoModal(false)
-    } catch (err: any) {
-      showError(err.message)
-    }
-  }
+
 
   if (loading) {
     return (
@@ -170,16 +158,7 @@ export default function ActivoDetail() {
         </div>
 
         <div className="detail-actions">
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => {
-              setNuevoEstado(activo.estado)
-              setEstadoModal(true)
-            }}
-            id="btn-cambiar-estado"
-          >
-            🔄 Estado
-          </button>
+
           <Link to={`/activos/${activo.id}/editar`} className="btn btn-primary btn-sm" id="btn-edit-detail">
             ✏️ Editar
           </Link>
@@ -335,35 +314,6 @@ export default function ActivoDetail() {
         </div>
       )}
 
-      {/* Estado Modal */}
-      {estadoModal && (
-        <div className="modal-overlay" onClick={() => setEstadoModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-title">🔄 Cambiar Estado</div>
-            <div className="modal-text">
-              Selecciona el nuevo estado para <strong>{activo.tag}</strong>:
-            </div>
-            <div className="form-group" style={{ marginBottom: '24px' }}>
-              <select
-                className="form-select"
-                value={nuevoEstado}
-                onChange={e => setNuevoEstado(e.target.value)}
-                id="select-nuevo-estado"
-              >
-                <option value="Operativo">Operativo</option>
-                <option value="En mantenimiento">En mantenimiento</option>
-                <option value="Fuera de servicio">Fuera de servicio</option>
-              </select>
-            </div>
-            <div className="modal-actions">
-              <button className="btn btn-secondary" onClick={() => setEstadoModal(false)}>Cancelar</button>
-              <button className="btn btn-primary" onClick={handleCambiarEstado} id="btn-confirm-estado">
-                Cambiar Estado
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Delete Modal */}
       {deleteModal && (

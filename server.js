@@ -154,6 +154,37 @@ const server = http.createServer(app)
 // Inicializar WebSocket Server
 initWSS(server)
 
+// ============================================================
+// Supabase Realtime Bridge -> WebSockets
+// ============================================================
+const { supabase } = require('./supabaseClient')
+const { broadcast } = require('./lib/wsServer')
+
+supabase.channel('db-changes')
+  .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ordenes_trabajo' }, (payload) => {
+    console.log('⚡ [Supabase Realtime] OT actualizada remotamente:', payload.new.numero_ot)
+    broadcast('ot_actualizada', { 
+      numero_ot: payload.new.numero_ot, 
+      estado: payload.new.estado, 
+      activo_tag: payload.new.activo_tag, 
+      tecnico: payload.new.tecnico_asignado 
+    })
+  })
+  .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'activos' }, (payload) => {
+    console.log('⚡ [Supabase Realtime] Activo actualizado remotamente:', payload.new.tag)
+    broadcast('activo_actualizado', {
+      activo_id: payload.new.id,
+      tag: payload.new.tag,
+      nombre: payload.new.nombre || '',
+      estado_nuevo: payload.new.estado
+    })
+  })
+  .subscribe((status) => {
+    if (status === 'SUBSCRIBED') {
+      console.log('🔗 [Supabase Realtime] Conectado y escuchando cambios (Sincronización Móvil ↔ Web activa)')
+    }
+  })
+
 server.listen(PORT, () => {
   console.log(`
   ╔════════════════════════════════════════════════╗

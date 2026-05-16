@@ -9,6 +9,7 @@ export interface Tecnico {
   estado: string;
   foto_url?: string;
   turno?: string;
+  password?: string;
   created_at: string;
 }
 

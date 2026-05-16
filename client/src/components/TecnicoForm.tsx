@@ -18,7 +18,8 @@ const TecnicoForm: React.FC<TecnicoFormProps> = ({ tecnicoId, tecnico, onClose, 
     email: '',
     estado: 'Activo',
     foto_url: '',
-    turno: ''
+    turno: '',
+    password: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -34,7 +35,8 @@ const TecnicoForm: React.FC<TecnicoFormProps> = ({ tecnicoId, tecnico, onClose, 
         email: tecnico.email || '',
         estado: tecnico.estado,
         foto_url: tecnico.foto_url || '',
-        turno: tecnico.turno || ''
+        turno: tecnico.turno || '',
+        password: tecnico.password || ''
       });
     }
   }, [tecnico]);
@@ -243,6 +245,17 @@ const TecnicoForm: React.FC<TecnicoFormProps> = ({ tecnicoId, tecnico, onClose, 
                 placeholder="Correo electrónico..."
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Contraseña</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Contraseña de acceso..."
+                value={formData.password || ''}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
             </div>
 

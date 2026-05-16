@@ -58,7 +58,7 @@ router.get('/:id', async (req, res) => {
 // ============================================================
 router.post('/', async (req, res) => {
   try {
-    const { nombre, especialidad, telefono, email, estado = 'Activo', foto_url, turno } = req.body
+    const { nombre, especialidad, telefono, email, estado = 'Activo', foto_url, turno, password } = req.body
 
     const errores = []
     if (!nombre) errores.push('El nombre es obligatorio')
@@ -71,7 +71,7 @@ router.post('/', async (req, res) => {
 
     if (errores.length > 0) return res.status(400).json({ success: false, errores })
 
-    const nuevoTecnico = { nombre, especialidad, telefono, email, estado, foto_url, turno: turno || null }
+    const nuevoTecnico = { nombre, especialidad, telefono, email, estado, foto_url, turno: turno || null, password: password || null }
 
     const { data, error } = await supabase.from('tecnicos').insert(nuevoTecnico).select().single()
 
@@ -90,7 +90,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { nombre, especialidad, telefono, email, estado, foto_url, turno } = req.body
+    const { nombre, especialidad, telefono, email, estado, foto_url, turno, password } = req.body
 
     const actualizacion = {}
     if (nombre !== undefined) actualizacion.nombre = nombre
@@ -100,6 +100,7 @@ router.put('/:id', async (req, res) => {
     if (estado !== undefined) actualizacion.estado = estado
     if (foto_url !== undefined) actualizacion.foto_url = foto_url
     if (turno !== undefined) actualizacion.turno = turno || null
+    if (password !== undefined) actualizacion.password = password
 
     const { data, error } = await supabase
       .from('tecnicos')
