@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { obtenerOrden, actualizarOrden } from '../api/ordenes';
 import { listarTecnicos, Tecnico } from '../api/tecnicos';
 import { compartirPorWhatsApp, DatosOT } from '../lib/whatsapp';
+import { useDashboardWS, EventoDashboard } from '../hooks/useDashboardWS';
 import MaterialesOT from './MaterialesOT';
 import { 
   ArrowLeft, 
@@ -77,6 +78,15 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
       if (res.data) setTecnicos(res.data);
     }).catch(() => {});
   }, [ordenId]);
+
+  useDashboardWS((evento: EventoDashboard) => {
+    if (evento.tipo === 'ot_actualizada') {
+      // Si el WebSocket nos avisa que esta misma OT se actualizó, recargamos los detalles
+      if (orden && evento.datos.numero_ot === orden.numero_ot) {
+        fetchDetail();
+      }
+    }
+  });
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,10 +178,17 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
                 const raw: string = orden.descripcion_problema || ''
                 const tituloMatch = raw.match(/^Plan de Mantenimiento(?:\s+Preventivo)?:\s*(.+?)(?:\n|$)/i)
                 const titulo = tituloMatch ? tituloMatch[1].trim() : raw.split('\n')[0]
-                const checklistItems: string[] = raw
+                const checklistTasks = raw
                   .split('\n')
-                  .filter((l: string) => l.trim().startsWith('- [ ]'))
-                  .map((l: string) => l.replace(/^-\s*\[\s*\]\s*/, '').trim())
+                  .filter((l: string) => l.trim().startsWith('- [ ]') || l.trim().startsWith('- [x]') || l.trim().startsWith('- [X]'))
+                  .map((l: string, idx: number) => {
+                    const isChecked = l.trim().startsWith('- [x]') || l.trim().startsWith('- [X]');
+                    return {
+                      id: idx,
+                      text: l.replace(/^-\s*\[\s*[xX ]\s*\]\s*/, '').trim(),
+                      checked: isChecked
+                    };
+                  });
 
                 return (
                   <div>
@@ -184,7 +201,7 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '14px',
-                      marginBottom: checklistItems.length > 0 ? '14px' : '0',
+                      marginBottom: checklistTasks.length > 0 ? '14px' : '0',
                       boxShadow: '0 0 24px rgba(16,185,129,0.06)',
                       position: 'relative',
                       overflow: 'hidden',
@@ -228,7 +245,7 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
                     </div>
 
                     {/* Checklist */}
-                    {checklistItems.length > 0 && (
+                    {checklistTasks.length > 0 && (
                       <div style={{
                         background: 'var(--bg-input)',
                         border: '1px solid var(--border-color)',
@@ -245,26 +262,38 @@ const OrdenDetail: React.FC<OrdenDetailProps> = ({ ordenId, onBack, onUpdated })
                             <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
                           </svg>
                           <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                            Checklist de Tareas — {checklistItems.length} {checklistItems.length === 1 ? 'ítem' : 'ítems'}
+                            Checklist de Tareas — {checklistTasks.length} {checklistTasks.length === 1 ? 'ítem' : 'ítems'}
                           </span>
                         </div>
                         <div style={{ padding: '8px 0' }}>
-                          {checklistItems.map((item: string, i: number) => (
+                          {checklistTasks.map((task: any, i: number) => (
                             <div key={i} style={{
                               display: 'flex', alignItems: 'center', gap: '10px',
                               padding: '8px 16px',
-                              borderBottom: i < checklistItems.length - 1 ? '1px solid var(--border-color)' : 'none',
+                              borderBottom: i < checklistTasks.length - 1 ? '1px solid var(--border-color)' : 'none',
                               transition: 'background 200ms ease',
+                              background: task.checked ? 'rgba(16,185,129,0.02)' : 'transparent',
                             }}>
                               <div style={{
                                 width: 18, height: 18, borderRadius: 5, flexShrink: 0,
-                                border: '2px solid rgba(16,185,129,0.5)',
-                                background: 'rgba(16,185,129,0.06)',
+                                border: `2px solid ${task.checked ? 'var(--accent-emerald)' : 'rgba(16,185,129,0.5)'}`,
+                                background: task.checked ? 'var(--accent-emerald)' : 'rgba(16,185,129,0.06)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                               }}>
-                                <div style={{ width: 6, height: 6, borderRadius: 2, background: 'rgba(16,185,129,0.3)' }} />
+                                {task.checked ? (
+                                  <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                  </svg>
+                                ) : (
+                                  <div style={{ width: 6, height: 6, borderRadius: 2, background: 'rgba(16,185,129,0.3)' }} />
+                                )}
                               </div>
-                              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{item}</span>
+                              <span style={{ 
+                                fontSize: '13px', 
+                                color: task.checked ? 'var(--text-muted)' : 'var(--text-secondary)', 
+                                textDecoration: task.checked ? 'line-through' : 'none',
+                                lineHeight: 1.4 
+                              }}>{task.text}</span>
                               <span style={{
                                 marginLeft: 'auto', fontSize: '10px', fontWeight: 600,
                                 color: 'var(--text-muted)', background: 'var(--bg-card)',

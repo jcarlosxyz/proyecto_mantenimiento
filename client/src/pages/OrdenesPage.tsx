@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { listarOrdenes } from '../api/ordenes';
 import { listarTecnicos, Tecnico } from '../api/tecnicos';
 import { listarActivos, type Activo } from '../api/activos';
+import { useOrdenesRealtime } from '../hooks/useOrdenesRealtime';
+import { useToast } from '../components/Toast';
 import { 
   Plus, 
   Search, 
@@ -29,6 +31,7 @@ interface OrdenTrabajo {
 }
 
 const OrdenesPage: React.FC = () => {
+  const { showSuccess } = useToast();
   const [ordenes, setOrdenes] = useState<OrdenTrabajo[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState('');
@@ -66,32 +69,69 @@ const OrdenesPage: React.FC = () => {
   const [hoveredActivo, setHoveredActivo] = useState<Activo | null>(null)
   const [tooltipActivoPos, setTooltipActivoPos] = useState({ top: 0, left: 0 })
 
-  const fetchOrdenes = async () => {
+  // Referencia estable a filtros actuales para evitar closures obsoletos
+  const filtroEstadoRef = useRef(filtroEstado);
+  const filtroPrioridadRef = useRef(filtroPrioridad);
+  const busquedaRef = useRef(busqueda);
+  useEffect(() => { filtroEstadoRef.current = filtroEstado }, [filtroEstado]);
+  useEffect(() => { filtroPrioridadRef.current = filtroPrioridad }, [filtroPrioridad]);
+  useEffect(() => { busquedaRef.current = busqueda }, [busqueda]);
+
+  // fetchOrdenes siempre lee los filtros actuales desde refs (nunca closure obsoleto)
+  const fetchOrdenes = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
-      const res = await listarOrdenes({ 
-        estado: filtroEstado || undefined, 
-        prioridad: filtroPrioridad || undefined 
+      if (!silent) setLoading(true);
+      const res = await listarOrdenes({
+        estado: filtroEstadoRef.current || undefined,
+        prioridad: filtroPrioridadRef.current || undefined
       });
       let data = res.data || res.ordenes || res || [];
-      
-      if (busqueda) {
-        data = data.filter((ot: any) => 
-          ot.numero_ot?.toLowerCase().includes(busqueda.toLowerCase()) || 
-          ot.activo_tag?.toLowerCase().includes(busqueda.toLowerCase())
+      if (busquedaRef.current) {
+        const q = busquedaRef.current.toLowerCase();
+        data = data.filter((ot: any) =>
+          ot.numero_ot?.toLowerCase().includes(q) ||
+          ot.activo_tag?.toLowerCase().includes(q)
         );
       }
       setOrdenes(data);
     } catch (err: any) {
-      console.error('Error al cargar órdenes:', err.message);
+      console.error('❌ [OrdenesPage] Error al cargar órdenes:', err.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, []);
+
+  // ─── Supabase Realtime directo desde el browser ───────────────────────────
+  // Reemplaza el puente WebSocket (Node → WS → Browser) por una conexión
+  // directa a Supabase, eliminando el problema de closures y reconexiones.
+  useOrdenesRealtime({
+    onInsert: useCallback((nuevaOT) => {
+      console.log('[OrdenesPage] Supabase INSERT recibido:', nuevaOT.numero_ot);
+      // Agregar la nueva OT al inicio de la lista
+      setOrdenes(prev => {
+        // Evitar duplicados si ya cargó por el POST local
+        if (prev.some(o => o.numero_ot === nuevaOT.numero_ot)) return prev;
+        return [nuevaOT as any, ...prev];
+      });
+      showSuccess(`⚡ Nueva OT ${nuevaOT.numero_ot} registrada en tiempo real`);
+    }, [showSuccess]),
+
+    onUpdate: useCallback((otActualizada) => {
+      console.log('[OrdenesPage] Supabase UPDATE recibido:', otActualizada.numero_ot, '→', otActualizada.estado);
+      // Actualizar el estado directamente con los datos frescos de Supabase
+      setOrdenes(prev => prev.map(ot =>
+        ot.numero_ot === otActualizada.numero_ot
+          ? { ...ot, ...otActualizada }
+          : ot
+      ));
+      showSuccess(`⚡ OT ${otActualizada.numero_ot} actualizada: ${otActualizada.estado}`);
+    }, [showSuccess]),
+  });
+  // ─────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     fetchOrdenes();
-  }, [filtroEstado, filtroPrioridad]);
+  }, [filtroEstado, filtroPrioridad, fetchOrdenes]);
 
   // Cargar técnicos y activos una sola vez para el mapa de fotos
   useEffect(() => {

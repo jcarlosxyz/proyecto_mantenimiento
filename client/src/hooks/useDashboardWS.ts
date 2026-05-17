@@ -13,6 +13,8 @@
  */
 import { useEffect, useRef, useCallback } from 'react'
 
+// Conectar directamente al puerto del servidor backend (3000) para evitar problemas
+// de conexión, demoras o caídas en el proxy de desarrollo de Vite en Windows.
 const WS_URL = `ws://${window.location.hostname}:3000/ws`
 
 const EVENTOS_DASHBOARD = new Set([
@@ -89,7 +91,7 @@ export function useDashboardWS(
       timerRef.current = setTimeout(conectar, 3_000)
     }
 
-    ws.onerror = () => ws.close()
+    ws.onerror = (err) => console.error('[Dashboard WS] Error en socket:', err)
   }, [enabled, dispatchThrottled])
 
   useEffect(() => {

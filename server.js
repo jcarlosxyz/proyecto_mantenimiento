@@ -155,22 +155,55 @@ const server = http.createServer(app)
 initWSS(server)
 
 // ============================================================
-// Supabase Realtime Bridge -> WebSockets
+// Supabase Realtime Bridge -> WebSockets with Debug Logging
 // ============================================================
-const { supabase } = require('./supabaseClient')
+const { supabase, supabaseAdmin } = require('./supabaseClient')
 const { broadcast } = require('./lib/wsServer')
+const fs = require('fs')
+const path = require('path')
 
-supabase.channel('db-changes')
-  .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ordenes_trabajo' }, (payload) => {
-    console.log('⚡ [Supabase Realtime] OT actualizada remotamente:', payload.new.numero_ot)
-    broadcast('ot_actualizada', { 
-      numero_ot: payload.new.numero_ot, 
-      estado: payload.new.estado, 
-      activo_tag: payload.new.activo_tag, 
-      tecnico: payload.new.tecnico_asignado 
-    })
+// Helper para escribir logs detallados en un archivo de texto
+function logDebug(message) {
+  const timestamp = new Date().toISOString()
+  const logLine = `[${timestamp}] ${message}\n`
+  try {
+    fs.appendFileSync(path.join(__dirname, 'realtime_debug.log'), logLine)
+  } catch (err) {
+    console.error('Error escribiendo log de realtime:', err.message)
+  }
+}
+
+// Usar supabaseAdmin si está disponible para evitar bloqueos por políticas de RLS
+const realtimeClient = supabaseAdmin || supabase;
+logDebug(`Iniciando canal Realtime usando: ${supabaseAdmin ? 'supabaseAdmin (service_role)' : 'supabase (anon)'}`)
+
+realtimeClient.channel('db-changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'ordenes_trabajo' }, (payload) => {
+    logDebug(`⚡ Evento Postgres en 'ordenes_trabajo': eventType=${payload.eventType}, numero_ot=${payload.new?.numero_ot || payload.old?.numero_ot}, estado=${payload.new?.estado}`)
+    
+    if (payload.eventType === 'INSERT') {
+      console.log('⚡ [Supabase Realtime] Nueva OT creada remotamente:', payload.new.numero_ot)
+      broadcast('ot_creada', { 
+        numero_ot: payload.new.numero_ot, 
+        activo_tag: payload.new.activo_tag, 
+        tipo: payload.new.tipo_mantenimiento, 
+        prioridad: payload.new.prioridad, 
+        tecnico: payload.new.tecnico_asignado 
+      })
+      logDebug(`[WS Broadcast] Enviado 'ot_creada' para ${payload.new.numero_ot}`)
+    } else if (payload.eventType === 'UPDATE') {
+      console.log('⚡ [Supabase Realtime] OT actualizada remotamente:', payload.new.numero_ot)
+      broadcast('ot_actualizada', { 
+        numero_ot: payload.new.numero_ot, 
+        estado: payload.new.estado, 
+        activo_tag: payload.new.activo_tag, 
+        tecnico: payload.new.tecnico_asignado 
+      })
+      logDebug(`[WS Broadcast] Enviado 'ot_actualizada' para ${payload.new.numero_ot} (Estado: ${payload.new.estado})`)
+    }
   })
   .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'activos' }, (payload) => {
+    logDebug(`⚡ Evento Postgres en 'activos': tag=${payload.new?.tag}, estado=${payload.new?.estado}`)
     console.log('⚡ [Supabase Realtime] Activo actualizado remotamente:', payload.new.tag)
     broadcast('activo_actualizado', {
       activo_id: payload.new.id,
@@ -178,10 +211,16 @@ supabase.channel('db-changes')
       nombre: payload.new.nombre || '',
       estado_nuevo: payload.new.estado
     })
+    logDebug(`[WS Broadcast] Enviado 'activo_actualizado' para ${payload.new.tag} (Estado: ${payload.new.estado})`)
   })
-  .subscribe((status) => {
+  .subscribe((status, err) => {
+    logDebug(`🔗 Canal 'db-changes' cambió a estado: ${status}${err ? ' | Detalle error: ' + JSON.stringify(err) : ''}`)
     if (status === 'SUBSCRIBED') {
       console.log('🔗 [Supabase Realtime] Conectado y escuchando cambios (Sincronización Móvil ↔ Web activa)')
+    } else if (status === 'CHANNEL_ERROR') {
+      console.error('❌ [Supabase Realtime Error] Error al conectar con Realtime. Detalle:', err || 'Sin error detallado. Verifica credenciales y RLS.')
+    } else {
+      console.log(`🔗 [Supabase Realtime Estado] Canal en estado: ${status}`)
     }
   })
 

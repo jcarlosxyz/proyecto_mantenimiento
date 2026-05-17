@@ -262,7 +262,8 @@ router.put('/:id', async (req, res) => {
       tiempo_reparacion_horas,
       materiales_usados,
       firma_cierre,
-      fecha_cierre
+      fecha_cierre,
+      descripcion_problema
     } = req.body
 
     // Validación de campos obligatorios al cerrar
@@ -281,6 +282,7 @@ router.put('/:id', async (req, res) => {
     if (tiempo_reparacion_horas !== undefined) actualizacion.tiempo_reparacion_horas = tiempo_reparacion_horas
     if (materiales_usados !== undefined) actualizacion.materiales_usados       = materiales_usados
     if (firma_cierre      !== undefined) actualizacion.firma_cierre            = firma_cierre
+    if (descripcion_problema !== undefined) actualizacion.descripcion_problema = descripcion_problema
 
     // Incluir fecha_cierre si viene del body o si se está cerrando la OT
     const fechaParaGuardar = fecha_cierre || (estado === 'Cerrada' ? new Date().toISOString() : undefined)

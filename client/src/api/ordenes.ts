@@ -32,8 +32,16 @@ export async function listarOrdenes(params: ListOrdenParams = {}) {
   if (params.estado) query.append('estado', params.estado)
   if (params.prioridad) query.append('prioridad', params.prioridad)
   if (params.activo_tag) query.append('activo_tag', params.activo_tag)
+  
+  // Agregar parámetro cache-buster para forzar respuesta fresca en tiempo real
+  query.append('_t', Date.now().toString())
 
-  const res = await fetch(`${API_URL}?${query.toString()}`)
+  const res = await fetch(`${API_URL}?${query.toString()}`, {
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
+  })
   if (!res.ok) {
     const error = await res.json()
     throw new Error(error.error || 'Error al listar OTs')
