@@ -25,5 +25,5 @@ export const API_BASE_URL = isDev
 export const WS_URL = isDev
   ? `ws://${window.location.hostname}:3000/ws`
   : (import.meta.env.VITE_API_URL || '')
-      .replace(/^https?:\/\//, (m) => (m.startsWith('https') ? 'wss://' : 'ws://'))
+      .replace(/^https?:\/\//, (m: string) => (m.startsWith('https') ? 'wss://' : 'ws://'))
       .replace(/\/$/, '') + '/ws'

@@ -12,6 +12,7 @@
  */
 import { useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 interface RealtimeOrdenPayload {
   numero_ot: string
@@ -50,7 +51,7 @@ export function useOrdenesRealtime({
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'ordenes_trabajo' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<RealtimeOrdenPayload>) => {
           console.log('[useOrdenesRealtime] INSERT recibido:', payload.new)
           onInsertRef.current?.(payload.new as RealtimeOrdenPayload)
         }
@@ -58,12 +59,12 @@ export function useOrdenesRealtime({
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'ordenes_trabajo' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<RealtimeOrdenPayload>) => {
           console.log('[useOrdenesRealtime] UPDATE recibido:', payload.new)
           onUpdateRef.current?.(payload.new as RealtimeOrdenPayload)
         }
       )
-      .subscribe((status, err) => {
+      .subscribe((status: string, err?: Error) => {
         if (status === 'SUBSCRIBED') {
           console.log('[useOrdenesRealtime] ✅ Canal Supabase conectado y escuchando')
         } else if (status === 'CHANNEL_ERROR') {
