@@ -267,3 +267,24 @@
 [2026-05-18T02:46:59.707Z] [WS Server] Cliente desconectado (Quedan conectados: 1)
 [2026-05-18T02:48:37.154Z] [WS Server] Cliente desconectado (Quedan conectados: 0)
 [2026-05-18T02:48:37.156Z] [WS Server] Cliente conectado desde IP: ::1 (Total conectados: 1)
+[2026-05-18T02:54:22.148Z] [WS Server] Cliente desconectado (Quedan conectados: 0)
+[2026-05-18T02:54:22.150Z] [WS Server] Cliente conectado desde IP: ::1 (Total conectados: 1)
+[2026-05-18T02:57:58.211Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=INSERT, numero_ot=OT-2026-0069, estado=Abierta
+[2026-05-18T02:57:58.216Z] [WS Broadcast] "ot_creada" enviado con éxito a 1 de 1 cliente(s) conectados
+[2026-05-18T02:57:58.217Z] [WS Broadcast] Enviado 'ot_creada' para OT-2026-0069
+[2026-05-18T02:57:58.219Z] ⚡ Evento Postgres en 'activos': tag=UTIL-COM-001, estado=Fuera de servicio
+[2026-05-18T02:57:58.221Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 1 de 1 cliente(s) conectados
+[2026-05-18T02:57:58.224Z] [WS Broadcast] Enviado 'activo_actualizado' para UTIL-COM-001 (Estado: Fuera de servicio)
+[2026-05-18T02:58:47.300Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=UPDATE, numero_ot=OT-2026-0069, estado=Cerrada
+[2026-05-18T02:58:47.305Z] [WS Broadcast] "ot_actualizada" enviado con éxito a 1 de 1 cliente(s) conectados
+[2026-05-18T02:58:47.309Z] [WS Broadcast] Enviado 'ot_actualizada' para OT-2026-0069 (Estado: Cerrada)
+[2026-05-18T02:58:47.896Z] ⚡ Evento Postgres en 'activos': tag=UTIL-COM-001, estado=Operativo
+[2026-05-18T02:58:47.898Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 1 de 1 cliente(s) conectados
+[2026-05-18T02:58:47.900Z] [WS Broadcast] Enviado 'activo_actualizado' para UTIL-COM-001 (Estado: Operativo)
+[2026-05-18T03:00:19.413Z] [WS Server] Cliente desconectado (Quedan conectados: 0)
+[2026-05-18T03:00:53.218Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=INSERT, numero_ot=OT-2026-0070, estado=Abierta
+[2026-05-18T03:00:53.220Z] [WS Broadcast] "ot_creada" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:00:53.221Z] [WS Broadcast] Enviado 'ot_creada' para OT-2026-0070
+[2026-05-18T03:00:53.270Z] ⚡ Evento Postgres en 'activos': tag=UTIL-COM-001, estado=Fuera de servicio
+[2026-05-18T03:00:53.272Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:00:53.273Z] [WS Broadcast] Enviado 'activo_actualizado' para UTIL-COM-001 (Estado: Fuera de servicio)
