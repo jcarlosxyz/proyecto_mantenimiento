@@ -87,6 +87,21 @@ router.patch('/:id/estado', async (req, res) => {
 
     if (error) throw error
 
+    // Si el estado cambia (ej. Cancelado), verificar si quedan órdenes activas
+    const { data: ordenesPendientes } = await db
+      .from('ordenes_compra')
+      .select('id')
+      .eq('material_id', data.material_id)
+      .neq('estado', 'Recibido')
+      .neq('estado', 'Cancelado'); // Asumiendo que Cancelado no es activa
+
+    const tiene_orden_activa = ordenesPendientes && ordenesPendientes.length > 0;
+
+    broadcast('orden_compra_actualizada', {
+      material_id: data.material_id,
+      tiene_orden_activa
+    });
+
     res.json({ success: true, mensaje: 'Estado actualizado', data })
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error al actualizar', detalle: error.message })
@@ -142,13 +157,24 @@ router.post('/:id/recibir', async (req, res) => {
       
     if (errUpdateOrden) throw errUpdateOrden
 
+    // 4.5. Verificar si quedan más órdenes de compra activas para este material
+    const { data: ordenesPendientes } = await db
+      .from('ordenes_compra')
+      .select('id')
+      .eq('material_id', orden.material_id)
+      .neq('estado', 'Recibido')
+      .neq('estado', 'Cancelado');
+
+    const tiene_orden_activa = ordenesPendientes && ordenesPendientes.length > 0;
+
     // 5. Emitir evento WebSocket para actualizar pantallas
     broadcast('inventario_actualizado', {
       material_id: orden.material_id,
       nombre: orden.materiales?.nombre ?? 'Material',
       stock_nuevo: nuevoStock,
       cantidad_usada: orden.cantidad,
-      accion: 'entrada'
+      accion: 'entrada',
+      tiene_orden_activa
     })
 
     res.json({ success: true, mensaje: 'Material recibido y stock actualizado', data: ordenActualizada })

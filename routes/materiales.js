@@ -137,7 +137,7 @@ router.post('/', async (req, res) => {
       throw error
     }
 
-    broadcast('catalogo_actualizado', { accion: 'creado', material_id: data.id, nombre: data.nombre, stock: data.stock })
+    broadcast('catalogo_actualizado', { accion: 'creado', material: data })
     res.status(201).json({ success: true, mensaje: 'Material creado exitosamente', data })
   } catch (error) {
     console.error('Catch creating material:', error)
@@ -169,7 +169,7 @@ router.put('/:id', async (req, res) => {
       throw error
     }
 
-    broadcast('catalogo_actualizado', { accion: 'actualizado', material_id: data.id, nombre: data.nombre, stock: data.stock })
+    broadcast('catalogo_actualizado', { accion: 'actualizado', material: data })
     res.json({ success: true, mensaje: 'Material actualizado exitosamente', data })
   } catch (error) {
     console.error('Catch updating material:', error)

@@ -52,7 +52,12 @@ export function useInventarioWS(
       try {
         const mensaje: EventoInventario = JSON.parse(event.data)
         // Procesar eventos de inventario y órdenes de compra
-        if (mensaje.tipo === 'inventario_actualizado' || mensaje.tipo === 'nueva_orden_compra') {
+        if (
+          mensaje.tipo === 'inventario_actualizado' || 
+          mensaje.tipo === 'nueva_orden_compra' || 
+          mensaje.tipo === 'orden_compra_actualizada' ||
+          mensaje.tipo === 'catalogo_actualizado'
+        ) {
           callbackRef.current(mensaje)
         }
       } catch {

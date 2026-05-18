@@ -32,7 +32,13 @@ export default function MaterialesList() {
       // Actualizar solo el material afectado en el array local
       setMateriales(prev =>
         prev.map(m =>
-          m.id === material_id ? { ...m, stock: stock_nuevo } : m
+          m.id === material_id 
+            ? { 
+                ...m, 
+                stock: stock_nuevo,
+                ...(evento.datos.tiene_orden_activa !== undefined ? { tiene_orden_activa: evento.datos.tiene_orden_activa } : {})
+              } 
+            : m
         )
       )
 
@@ -53,6 +59,30 @@ export default function MaterialesList() {
       );
       setWsNotif({ nombre: orden.materiales?.nombre || 'Material', stock: orden.cantidad, accion: '🛒 Nueva Orden Generada' });
       setTimeout(() => setWsNotif(null), 4000)
+    } else if (evento.tipo === 'orden_compra_actualizada') {
+      const { material_id, tiene_orden_activa } = evento.datos;
+      setMateriales(prev => 
+        prev.map(m => 
+          m.id === material_id ? { ...m, tiene_orden_activa } : m
+        )
+      );
+    } else if (evento.tipo === 'catalogo_actualizado') {
+      const { accion, material, material_id } = evento.datos;
+      if (accion === 'creado') {
+        setMateriales(prev => [material, ...prev]);
+        setWsNotif({ nombre: material.nombre, stock: material.stock, accion: '✨ Nuevo Material' });
+        setTimeout(() => setWsNotif(null), 4000);
+      } else if (accion === 'actualizado') {
+        setMateriales(prev => 
+          prev.map(m => 
+            m.id === material.id ? { ...m, ...material, tiene_orden_activa: m.tiene_orden_activa } : m
+          )
+        );
+        setWsNotif({ nombre: material.nombre, stock: material.stock, accion: '✏️ Material Actualizado' });
+        setTimeout(() => setWsNotif(null), 4000);
+      } else if (accion === 'eliminado') {
+        setMateriales(prev => prev.filter(m => m.id !== material_id));
+      }
     }
   }, []))
 
