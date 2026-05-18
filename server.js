@@ -13,6 +13,7 @@ const http     = require('http')
 require('dotenv').config()
 
 const { initWSS } = require('./lib/wsServer')
+const { testSMTP } = require('./lib/emailService')
 
 const app  = express()
 const PORT = process.env.PORT || 3000
@@ -144,6 +145,19 @@ app.use('/api/ordenes-compra', ordenesCompraRoutes)
 const whatsappRoutes = require('./routes/whatsapp')
 app.use('/api/whatsapp', whatsappRoutes)
 
+// ── Endpoint de diagnóstico SMTP ─────────────────────────────────
+// GET /api/test-email?to=correo@ejemplo.com
+// Verifica la conexión SMTP y envía un correo de prueba
+app.get('/api/test-email', async (req, res) => {
+  const to = req.query.to || null
+  console.log(`[server] 🔍 Test SMTP solicitado${to ? ` → destino: ${to}` : ' (usando SMTP_USER como destino)'}`)
+  const resultado = await testSMTP(to)
+  if (resultado.error) {
+    return res.status(500).json({ success: false, ...resultado })
+  }
+  res.json({ success: true, ...resultado })
+})
+
 // ============================================================
 // Manejo de errores
 // ============================================================
@@ -256,6 +270,15 @@ server.listen(PORT, () => {
   ║   Presiona Ctrl+C para detener                     ║
   ╚════════════════════════════════════════════════╝
   `)
+
+  // ── Diagnóstico SMTP al arrancar ──────────────────────────────
+  console.log('[server] 📧 SMTP Config:')
+  console.log(`  SMTP_HOST : ${process.env.SMTP_HOST  || '❌ NO DEFINIDO (usará smtp.gmail.com)'}`)
+  console.log(`  SMTP_PORT : ${process.env.SMTP_PORT  || '❌ NO DEFINIDO (usará 587)'}`)
+  console.log(`  SMTP_USER : ${process.env.SMTP_USER  || '❌ NO DEFINIDO — correos NO se enviarán'}`)
+  console.log(`  SMTP_PASS : ${process.env.SMTP_PASS  ? '✅ Definida' : '❌ NO DEFINIDA — correos NO se enviarán'}`)
+  console.log(`  SMTP_FROM : ${process.env.SMTP_FROM  || '(usará SMTP_USER)'}`)
+  console.log('  💡 Prueba el SMTP en: GET /api/test-email?to=tu@correo.com')
 })
 
 // Apagado limpio con Ctrl+C
