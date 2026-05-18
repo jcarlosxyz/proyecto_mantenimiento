@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { crearOrden } from '../api/ordenes';
-import { listarActivos } from '../api/activos';
+import { listarActivos, type Activo } from '../api/activos';
 import { listarTecnicos, Tecnico } from '../api/tecnicos';
 import { X, Save, AlertTriangle, CheckCircle, MessageCircle, Loader } from 'lucide-react';
 import { compartirPorWhatsApp, enviarOTPorWhatsApp, DatosOT } from '../lib/whatsapp';
@@ -11,7 +11,7 @@ interface OrdenFormProps {
 }
 
 const OrdenForm: React.FC<OrdenFormProps> = ({ onClose, onSuccess }) => {
-  const [activos, setActivos] = useState<{tag: string, nombre: string, estado: string, imagen_url?: string}[]>([]);
+  const [activos, setActivos] = useState<Activo[]>([]);
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   const [formData, setFormData] = useState({
     activo_tag: '',

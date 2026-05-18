@@ -254,3 +254,10 @@
 [2026-05-17T17:22:58.882Z] [WS Broadcast] Enviado 'activo_actualizado' para UTIL-COM-004 (Estado: Fuera de servicio)
 [2026-05-17T17:30:25.174Z] 🔗 Canal 'db-changes' cambió a estado: CHANNEL_ERROR
 [2026-05-17T17:30:26.680Z] 🔗 Canal 'db-changes' cambió a estado: SUBSCRIBED
+[2026-05-17T20:42:18.065Z] [WS Server] Cliente conectado desde IP: ::1 (Total conectados: 1)
+[2026-05-17T20:42:18.069Z] [WS Server] Cliente desconectado (Quedan conectados: 0)
+[2026-05-17T20:42:18.082Z] [WS Server] Cliente conectado desde IP: ::1 (Total conectados: 1)
+[2026-05-17T20:42:56.509Z] [WS Server] Cliente desconectado (Quedan conectados: 0)
+[2026-05-17T20:42:56.513Z] [WS Server] Cliente conectado desde IP: ::1 (Total conectados: 1)
+[2026-05-17T20:42:56.516Z] [WS Server] Cliente desconectado (Quedan conectados: 0)
+[2026-05-17T20:42:56.528Z] [WS Server] Cliente conectado desde IP: ::1 (Total conectados: 1)

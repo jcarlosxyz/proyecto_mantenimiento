@@ -1,5 +1,5 @@
-//const API_URL = 'http://localhost:3000/api/materiales'
-const API_URL = '/api/materiales'
+import { API_BASE_URL } from '../config'
+const API_URL = `${API_BASE_URL}/api/materiales`
 
 export interface Material {
   id: string

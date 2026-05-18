@@ -56,7 +56,7 @@ export default function ActivosList() {
     setActivos(prev =>
       prev.map(a =>
         (a.id === activo_id || a.tag === tag)
-          ? { ...a, estado: estado_nuevo }
+          ? { ...a, estado: estado_nuevo as Activo['estado'] }
           : a
       )
     )

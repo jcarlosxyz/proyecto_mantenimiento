@@ -1,4 +1,5 @@
-const API_URL = '/api/ordenes-materiales'
+import { API_BASE_URL } from '../config'
+const API_URL = `${API_BASE_URL}/api/ordenes-materiales`
 
 export interface OrdenMaterial {
   id: string

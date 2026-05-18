@@ -12,10 +12,11 @@
  *   tecnico_actualizado    → Técnico creado/editado/eliminado (tecnicos.js)
  */
 import { useEffect, useRef, useCallback } from 'react'
+import { WS_URL } from '../config'
 
-// Conectar directamente al puerto del servidor backend (3000) para evitar problemas
-// de conexión, demoras o caídas en el proxy de desarrollo de Vite en Windows.
-const WS_URL = `ws://${window.location.hostname}:3000/ws`
+// URL del servidor WebSocket — resuelta automáticamente por config.ts:
+// dev:  ws://localhost:3000/ws
+// prod: wss://tu-backend.railway.app/ws
 
 const EVENTOS_DASHBOARD = new Set([
   'ot_creada',

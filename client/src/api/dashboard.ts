@@ -1,4 +1,5 @@
-const API_URL = '/api/dashboard'
+import { API_BASE_URL } from '../config'
+const API_URL = `${API_BASE_URL}/api/dashboard`
 
 export interface DashboardData {
   generado: string

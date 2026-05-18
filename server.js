@@ -17,10 +17,30 @@ const { initWSS } = require('./lib/wsServer')
 const app  = express()
 const PORT = process.env.PORT || 3000
 
-// ============================================================
-// Middleware
-// ============================================================
-app.use(cors())
+// ── CORS ─────────────────────────────────────────────────────────
+// Permite: localhost (dev), dominios de Vercel (.vercel.app) y
+// el dominio personalizado definido en FRONTEND_URL (si existe).
+const allowedOrigins = [
+  /^http:\/\/localhost(:\d+)?$/,
+  /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+  /\.vercel\.app$/,
+]
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(new RegExp(`^${process.env.FRONTEND_URL.replace(/\./g, '\\.')}$`))
+}
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Permitir sin origin (Postman, curl, apps móviles)
+    if (!origin) return callback(null, true)
+    const allowed = allowedOrigins.some(r => r.test(origin))
+    if (allowed) return callback(null, true)
+    callback(new Error(`CORS bloqueado para: ${origin}`))
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}))
 app.use(express.json())
 
 // Log de requests

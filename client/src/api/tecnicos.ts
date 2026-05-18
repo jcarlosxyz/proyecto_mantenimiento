@@ -1,4 +1,5 @@
-const API_URL = '/api/tecnicos';
+import { API_BASE_URL } from '../config'
+const API_URL = `${API_BASE_URL}/api/tecnicos`;
 
 export interface Tecnico {
   id: string;
@@ -82,7 +83,7 @@ export async function subirFotoTecnico(file: File, tecnicoId?: string): Promise<
   if (tecnicoId) formData.append('activo_id', `tecnicos/${tecnicoId}`);
   else formData.append('activo_id', 'tecnicos/temp');
 
-  const res = await fetch('/api/upload/imagen', {
+  const res = await fetch(`${API_BASE_URL}/api/upload/imagen`, {
     method: 'POST',
     body: formData
   });

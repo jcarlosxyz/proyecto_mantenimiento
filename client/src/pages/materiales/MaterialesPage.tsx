@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { type Material } from '../../api/materiales';
 import { 
   Plus, 
   Search, 
@@ -11,15 +12,6 @@ import {
   AlertCircle
 } from 'lucide-react';
 import MaterialForm from './MaterialForm';
-
-interface Material {
-  id: string;
-  nombre: string;
-  unidad: string;
-  costo_unitario: number;
-  stock: number;
-  created_at: string;
-}
 
 const MaterialesPage: React.FC = () => {
   const [materiales, setMateriales] = useState<Material[]>([]);
@@ -136,7 +128,7 @@ const MaterialesPage: React.FC = () => {
                         <span className={m.stock < 5 ? 'text-red-500 font-bold' : ''}>
                           {m.stock}
                         </span>
-                        {m.stock < 5 && <AlertCircle size={14} className="text-red-500" title="Stock bajo" />}
+                        {m.stock < 5 && <AlertCircle size={14} className="text-red-500" aria-label="Stock bajo" />}
                       </div>
                     </td>
                     <td>
