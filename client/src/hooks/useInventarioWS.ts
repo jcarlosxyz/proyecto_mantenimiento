@@ -9,9 +9,7 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react'
-
-// WS conecta al mismo host/puerto que el backend (proxy de Vite redirige /ws)
-const WS_URL = `ws://${window.location.hostname}:3000/ws`
+import { WS_URL } from '../config'
 
 export interface EventoInventario {
   tipo: string

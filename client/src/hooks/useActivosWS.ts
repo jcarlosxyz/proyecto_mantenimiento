@@ -9,8 +9,7 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react'
-
-const WS_URL = `ws://${window.location.hostname}:3000/ws`
+import { WS_URL } from '../config'
 
 export interface EventoActivo {
   tipo: string
