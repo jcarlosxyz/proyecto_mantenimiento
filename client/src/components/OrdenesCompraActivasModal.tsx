@@ -8,9 +8,10 @@ import { useInventarioWS } from '../hooks/useInventarioWS'
 interface OrdenesCompraActivasModalProps {
   material: Material
   onClose: () => void
+  onRecibir?: () => void
 }
 
-export default function OrdenesCompraActivasModal({ material, onClose }: OrdenesCompraActivasModalProps) {
+export default function OrdenesCompraActivasModal({ material, onClose, onRecibir }: OrdenesCompraActivasModalProps) {
   const { showError, showSuccess } = useToast()
 
   const [ordenes, setOrdenes] = useState<OrdenCompra[]>([])
@@ -20,7 +21,20 @@ export default function OrdenesCompraActivasModal({ material, onClose }: Ordenes
 
   useInventarioWS(useCallback((evento: any) => {
     if (evento.tipo === 'nueva_orden_compra' && evento.datos.material_id === material.id) {
-      setOrdenes(prev => [evento.datos, ...prev]);
+      setOrdenes(prev => {
+        if (prev.some(o => o.id === evento.datos.id)) return prev;
+        return [evento.datos, ...prev];
+      });
+    } else if (evento.tipo === 'inventario_actualizado' && evento.datos.material_id === material.id) {
+      const { accion, orden_id } = evento.datos;
+      if (accion === 'entrada' && orden_id) {
+        setOrdenes(prev => prev.map(o => o.id === orden_id ? { ...o, estado: 'Recibido' } : o))
+      }
+    } else if (evento.tipo === 'orden_compra_actualizada' && evento.datos.material_id === material.id) {
+      const { orden_id, estado } = evento.datos;
+      if (orden_id && estado) {
+        setOrdenes(prev => prev.map(o => o.id === orden_id ? { ...o, estado } : o))
+      }
     }
   }, [material.id]))
 
@@ -46,6 +60,7 @@ export default function OrdenesCompraActivasModal({ material, onClose }: Ordenes
       if (res.success) {
         setOrdenes(prev => prev.map(o => o.id === ordenId ? { ...o, estado: 'Recibido' } : o))
         showSuccess('¡Material ingresado al inventario con éxito!')
+        if (onRecibir) onRecibir()
       }
     } catch (err: any) {
       showError(err.message || 'Error al procesar la entrada de material')

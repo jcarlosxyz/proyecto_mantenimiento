@@ -288,3 +288,84 @@
 [2026-05-18T03:00:53.270Z] ⚡ Evento Postgres en 'activos': tag=UTIL-COM-001, estado=Fuera de servicio
 [2026-05-18T03:00:53.272Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 0 de 0 cliente(s) conectados
 [2026-05-18T03:00:53.273Z] [WS Broadcast] Enviado 'activo_actualizado' para UTIL-COM-001 (Estado: Fuera de servicio)
+[2026-05-18T03:08:04.613Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=INSERT, numero_ot=OT-2026-0071, estado=Abierta
+[2026-05-18T03:08:04.616Z] [WS Broadcast] "ot_creada" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:08:04.618Z] [WS Broadcast] Enviado 'ot_creada' para OT-2026-0071
+[2026-05-18T03:08:04.620Z] ⚡ Evento Postgres en 'activos': tag=SERV-BOM-001, estado=Fuera de servicio
+[2026-05-18T03:08:04.621Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:08:04.622Z] [WS Broadcast] Enviado 'activo_actualizado' para SERV-BOM-001 (Estado: Fuera de servicio)
+[2026-05-18T03:12:41.307Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=INSERT, numero_ot=OT-2026-0072, estado=Abierta
+[2026-05-18T03:12:41.308Z] [WS Broadcast] "ot_creada" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:12:41.309Z] [WS Broadcast] Enviado 'ot_creada' para OT-2026-0072
+[2026-05-18T03:12:41.310Z] ⚡ Evento Postgres en 'activos': tag=PROD-MOT-001, estado=Fuera de servicio
+[2026-05-18T03:12:41.310Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:12:41.311Z] [WS Broadcast] Enviado 'activo_actualizado' para PROD-MOT-001 (Estado: Fuera de servicio)
+[2026-05-18T03:19:53.701Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=UPDATE, numero_ot=OT-2026-0072, estado=Cerrada
+[2026-05-18T03:19:53.703Z] [WS Broadcast] "ot_actualizada" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:19:53.704Z] [WS Broadcast] Enviado 'ot_actualizada' para OT-2026-0072 (Estado: Cerrada)
+[2026-05-18T03:19:53.705Z] ⚡ Evento Postgres en 'activos': tag=PROD-MOT-001, estado=Operativo
+[2026-05-18T03:19:53.706Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:19:53.707Z] [WS Broadcast] Enviado 'activo_actualizado' para PROD-MOT-001 (Estado: Operativo)
+[2026-05-18T03:20:09.552Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=UPDATE, numero_ot=OT-2026-0071, estado=Cerrada
+[2026-05-18T03:20:09.552Z] [WS Broadcast] "ot_actualizada" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:20:09.553Z] [WS Broadcast] Enviado 'ot_actualizada' para OT-2026-0071 (Estado: Cerrada)
+[2026-05-18T03:20:09.554Z] ⚡ Evento Postgres en 'activos': tag=SERV-BOM-001, estado=Operativo
+[2026-05-18T03:20:09.555Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:20:09.556Z] [WS Broadcast] Enviado 'activo_actualizado' para SERV-BOM-001 (Estado: Operativo)
+[2026-05-18T03:20:25.984Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=UPDATE, numero_ot=OT-2026-0070, estado=Cerrada
+[2026-05-18T03:20:25.985Z] [WS Broadcast] "ot_actualizada" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:20:25.986Z] [WS Broadcast] Enviado 'ot_actualizada' para OT-2026-0070 (Estado: Cerrada)
+[2026-05-18T03:20:26.036Z] ⚡ Evento Postgres en 'activos': tag=UTIL-COM-001, estado=Operativo
+[2026-05-18T03:20:26.036Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:20:26.037Z] [WS Broadcast] Enviado 'activo_actualizado' para UTIL-COM-001 (Estado: Operativo)
+[2026-05-18T03:20:43.011Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=UPDATE, numero_ot=OT-2026-0068, estado=Cerrada
+[2026-05-18T03:20:43.012Z] [WS Broadcast] "ot_actualizada" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:20:43.012Z] [WS Broadcast] Enviado 'ot_actualizada' para OT-2026-0068 (Estado: Cerrada)
+[2026-05-18T03:20:43.013Z] ⚡ Evento Postgres en 'activos': tag=UTIL-COM-004, estado=Operativo
+[2026-05-18T03:20:43.014Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:20:43.015Z] [WS Broadcast] Enviado 'activo_actualizado' para UTIL-COM-004 (Estado: Operativo)
+[2026-05-18T03:21:01.047Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=UPDATE, numero_ot=OT-2026-0065, estado=Cerrada
+[2026-05-18T03:21:01.049Z] [WS Broadcast] "ot_actualizada" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:21:01.050Z] [WS Broadcast] Enviado 'ot_actualizada' para OT-2026-0065 (Estado: Cerrada)
+[2026-05-18T03:21:01.051Z] ⚡ Evento Postgres en 'activos': tag=SERV-BOM-003, estado=Operativo
+[2026-05-18T03:21:01.051Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:21:01.052Z] [WS Broadcast] Enviado 'activo_actualizado' para SERV-BOM-003 (Estado: Operativo)
+[2026-05-18T03:21:27.254Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=INSERT, numero_ot=OT-2026-0073, estado=Abierta
+[2026-05-18T03:21:27.255Z] [WS Broadcast] "ot_creada" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:21:27.255Z] [WS Broadcast] Enviado 'ot_creada' para OT-2026-0073
+[2026-05-18T03:21:27.256Z] ⚡ Evento Postgres en 'activos': tag=SERV-BOM-001, estado=En mantenimiento
+[2026-05-18T03:21:27.257Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:21:27.258Z] [WS Broadcast] Enviado 'activo_actualizado' para SERV-BOM-001 (Estado: En mantenimiento)
+[2026-05-18T03:45:32.501Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=UPDATE, numero_ot=OT-2026-0073, estado=Cerrada
+[2026-05-18T03:45:32.503Z] [WS Broadcast] "ot_actualizada" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:45:32.504Z] [WS Broadcast] Enviado 'ot_actualizada' para OT-2026-0073 (Estado: Cerrada)
+[2026-05-18T03:45:32.505Z] ⚡ Evento Postgres en 'activos': tag=SERV-BOM-001, estado=Operativo
+[2026-05-18T03:45:32.505Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T03:45:32.506Z] [WS Broadcast] Enviado 'activo_actualizado' para SERV-BOM-001 (Estado: Operativo)
+[2026-05-18T04:24:09.154Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=INSERT, numero_ot=OT-2026-0074, estado=Abierta
+[2026-05-18T04:24:09.157Z] [WS Broadcast] "ot_creada" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T04:24:09.157Z] [WS Broadcast] Enviado 'ot_creada' para OT-2026-0074
+[2026-05-18T04:24:09.158Z] ⚡ Evento Postgres en 'activos': tag=SERV-BOM-003, estado=Fuera de servicio
+[2026-05-18T04:24:09.159Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T04:24:09.160Z] [WS Broadcast] Enviado 'activo_actualizado' para SERV-BOM-003 (Estado: Fuera de servicio)
+[2026-05-18T04:25:12.852Z] ⚡ Evento Postgres en 'ordenes_trabajo': eventType=UPDATE, numero_ot=OT-2026-0074, estado=Cerrada
+[2026-05-18T04:25:12.854Z] [WS Broadcast] "ot_actualizada" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T04:25:12.854Z] [WS Broadcast] Enviado 'ot_actualizada' para OT-2026-0074 (Estado: Cerrada)
+[2026-05-18T04:25:13.448Z] ⚡ Evento Postgres en 'activos': tag=SERV-BOM-003, estado=Operativo
+[2026-05-18T04:25:13.449Z] [WS Broadcast] "activo_actualizado" enviado con éxito a 0 de 0 cliente(s) conectados
+[2026-05-18T04:25:13.450Z] [WS Broadcast] Enviado 'activo_actualizado' para SERV-BOM-003 (Estado: Operativo)
+[2026-05-18T12:42:47.925Z] 🔗 Canal 'db-changes' cambió a estado: CHANNEL_ERROR
+[2026-05-18T15:45:51.101Z] 🔗 Canal 'db-changes' cambió a estado: SUBSCRIBED
+[2026-05-18T17:13:42.764Z] 🔗 Canal 'db-changes' cambió a estado: CHANNEL_ERROR
+[2026-05-18T17:25:43.113Z] 🔗 Canal 'db-changes' cambió a estado: SUBSCRIBED
+[2026-05-19T13:20:21.584Z] [WS Server] WebSocket Server iniciado exitosamente en puerto del backend
+[2026-05-19T13:20:21.586Z] Iniciando canal Realtime usando: supabaseAdmin (service_role)
+[2026-05-19T13:20:22.209Z] [WS Server] WebSocket Server iniciado exitosamente en puerto del backend
+[2026-05-19T13:20:22.210Z] Iniciando canal Realtime usando: supabaseAdmin (service_role)
+[2026-05-19T13:20:22.741Z] 🔗 Canal 'db-changes' cambió a estado: SUBSCRIBED
+[2026-05-19T13:21:00.420Z] [WS Server] WebSocket Server iniciado exitosamente en puerto del backend
+[2026-05-19T13:21:00.421Z] Iniciando canal Realtime usando: supabaseAdmin (service_role)
+[2026-05-19T13:21:01.380Z] 🔗 Canal 'db-changes' cambió a estado: SUBSCRIBED
+[2026-05-19T13:21:45.252Z] [WS Server] WebSocket Server iniciado exitosamente en puerto del backend
+[2026-05-19T13:21:45.275Z] Iniciando canal Realtime usando: supabaseAdmin (service_role)
+[2026-05-19T13:21:45.744Z] 🔗 Canal 'db-changes' cambió a estado: SUBSCRIBED

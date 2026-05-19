@@ -98,6 +98,8 @@ router.patch('/:id/estado', async (req, res) => {
     const tiene_orden_activa = ordenesPendientes && ordenesPendientes.length > 0;
 
     broadcast('orden_compra_actualizada', {
+      orden_id: id,
+      estado: data.estado,
       material_id: data.material_id,
       tiene_orden_activa
     });
@@ -174,7 +176,8 @@ router.post('/:id/recibir', async (req, res) => {
       stock_nuevo: nuevoStock,
       cantidad_usada: orden.cantidad,
       accion: 'entrada',
-      tiene_orden_activa
+      tiene_orden_activa,
+      orden_id: id
     })
 
     res.json({ success: true, mensaje: 'Material recibido y stock actualizado', data: ordenActualizada })

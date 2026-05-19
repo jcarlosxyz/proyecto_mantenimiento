@@ -431,8 +431,9 @@ export default function MaterialesList() {
       {/* Modal de Órdenes Activas */}
       {ordenesActivasModal && (
         <OrdenesCompraActivasModal
-          material={ordenesActivasModal}
+          material={materiales.find(m => m.id === ordenesActivasModal.id) || ordenesActivasModal}
           onClose={() => setOrdenesActivasModal(null)}
+          onRecibir={fetchMateriales}
         />
       )}
     </>
