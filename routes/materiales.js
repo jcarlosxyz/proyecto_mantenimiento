@@ -40,6 +40,7 @@ router.get('/', async (req, res) => {
         .select('material_id')
         .in('material_id', materialIds)
         .neq('estado', 'Recibido')
+        .neq('estado', 'Cancelado')
       
       // Añadir la bandera si la tabla existe (si no existe omitimos el error silenciosamente)
       if (ordenesActivas) {
